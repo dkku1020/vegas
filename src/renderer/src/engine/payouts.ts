@@ -4,7 +4,12 @@ const BANKER_COMMISSION = 0.05
 const TIE_PROFIT_MULTIPLIER = 8
 
 function roundToCents(amount: number): number {
-  return Math.round(amount * 100) / 100
+  // Math.round(amount * 100) / 100 misrounds ~1% of cent-precision amounts
+  // because amount * 100 lands just under a .5 boundary due to binary
+  // floating-point imprecision (e.g. 0.70 * 1.95 = 1.3649999999999998,
+  // not 1.365). Number.EPSILON compensation does not fully fix this; a
+  // small fixed epsilon nudges the value across the boundary reliably.
+  return Math.round(amount * 100 + 1e-7) / 100
 }
 
 export function computeSettlement(bets: Bets, outcome: Outcome): Settlement {

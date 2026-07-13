@@ -26,6 +26,14 @@ describe('computeSettlement', () => {
     expect(result.netChange).toBe(4.75)
   })
 
+  it('rounds a $0.70 banker win to $1.37, not $1.36 (floating-point regression)', () => {
+    // 0.70 + 0.70 * 0.95 === 1.3649999999999998 in IEEE 754 double precision,
+    // which a naive Math.round(x * 100) / 100 misrounds down to 1.36.
+    const result = computeSettlement({ player: 0, banker: 0.7, tie: 0 }, 'banker')
+    expect(result.payouts.banker).toBe(1.37)
+    expect(result.netChange).toBe(0.67)
+  })
+
   it('pays a tie bet 8:1 and pushes player/banker bets', () => {
     const result = computeSettlement({ player: 20, banker: 0, tie: 10 }, 'tie')
     expect(result.payouts).toEqual({ player: 20, banker: 0, tie: 90 })
