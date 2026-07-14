@@ -15,6 +15,7 @@ export interface GameState {
   phase: GamePhase
   lastResult: PlayHandResult | null
   lastSettlement: Settlement | null
+  lastBets: Bets | null
   shoeHistory: HandHistoryEntry[]
   sessionHistory: HandHistoryEntry[]
 }
@@ -35,6 +36,7 @@ export function createInitialState(bankroll: number, randomFn?: () => number): G
     phase: 'betting',
     lastResult: null,
     lastSettlement: null,
+    lastBets: null,
     shoeHistory: [],
     sessionHistory: []
   }
@@ -84,6 +86,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         phase: 'result',
         lastResult: result,
         lastSettlement: settlement,
+        lastBets: { ...state.bets },
         shoeHistory: [...state.shoeHistory, historyEntry],
         sessionHistory: [...state.sessionHistory, historyEntry]
       }

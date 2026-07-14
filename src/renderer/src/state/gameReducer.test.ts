@@ -70,6 +70,12 @@ describe('gameReducer', () => {
     expect(next.sessionHistory).toHaveLength(1)
   })
 
+  it('DEAL records the wagered bets as lastBets for a future Rebet', () => {
+    const state = stateWithShoe({ bankroll: 900, bets: { player: 100, banker: 0, tie: 0 } })
+    const next = gameReducer(state, { type: 'DEAL' })
+    expect(next.lastBets).toEqual({ player: 100, banker: 0, tie: 0 })
+  })
+
   it('NEW_HAND returns to betting and clears the current bets', () => {
     const dealt = gameReducer(
       stateWithShoe({
