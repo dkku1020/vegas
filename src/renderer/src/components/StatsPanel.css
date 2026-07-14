@@ -1,0 +1,11 @@
+.stats-panel {
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  padding: 16px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+  font-size: 0.9rem;
+}
