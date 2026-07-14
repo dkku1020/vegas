@@ -43,3 +43,15 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+.app__mode-toggle {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 8px 0 0;
+}
+
+.app__mode-toggle button[aria-pressed='true'] {
+  font-weight: 700;
+  text-decoration: underline;
+}

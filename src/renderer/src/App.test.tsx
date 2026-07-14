@@ -1,7 +1,7 @@
 // src/renderer/src/App.test.tsx
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import App from './App'
 
 function mockElectronAPI(bankroll: number): void {
@@ -70,5 +70,19 @@ describe('App', () => {
 
     const layoutChildren = Array.from(layout!.children)
     expect(layoutChildren.indexOf(boardRow!)).toBeLessThan(layoutChildren.indexOf(tableRow!))
+  })
+
+  it('switches to simulate mode and back without losing the play-mode table', async () => {
+    mockElectronAPI(1000)
+    render(<App />)
+    await waitFor(() => expect(screen.getByTestId('table')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Simulate' }))
+    expect(screen.getByTestId('simulate-panel')).toBeInTheDocument()
+    expect(screen.queryByTestId('table')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }))
+    expect(screen.getByTestId('table')).toBeInTheDocument()
+    expect(screen.queryByTestId('simulate-panel')).not.toBeInTheDocument()
   })
 })
