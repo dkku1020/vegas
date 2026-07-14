@@ -1,0 +1,36 @@
+.big-road {
+  display: flex;
+  gap: 2px;
+  background: #fff;
+  padding: 8px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.big-road__column {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.big-road__cell {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: #0b5e33;
+}
+
+.big-road__cell--player {
+  border-color: #1a5fb4;
+  color: #1a5fb4;
+}
+
+.big-road__cell--banker {
+  border-color: #c0392b;
+  color: #c0392b;
+}
