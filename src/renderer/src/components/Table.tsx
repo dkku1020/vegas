@@ -14,7 +14,7 @@ const SPOT_LABELS: Record<BetSpot, string> = {
   tie: 'Tie'
 }
 
-const SPOTS: BetSpot[] = ['player', 'banker', 'tie']
+const SPOTS: BetSpot[] = ['player', 'tie', 'banker']
 
 export function Table() {
   const { state, dispatch } = useGame()
@@ -23,6 +23,10 @@ export function Table() {
   const totalWagered = state.bets.player + state.bets.banker + state.bets.tie
   const canBet = state.phase === 'betting'
   const canDeal = canBet && totalWagered >= TABLE_MIN_BET
+  const rebetTotal = state.lastBets
+    ? state.lastBets.player + state.lastBets.banker + state.lastBets.tie
+    : 0
+  const canRebet = canBet && totalWagered === 0 && state.lastBets !== null && rebetTotal <= state.bankroll
 
   useEffect(() => {
     if (state.phase === 'result' && state.lastSettlement) {
@@ -45,6 +49,18 @@ export function Table() {
   function handleClear(): void {
     if (state.phase !== 'betting') return
     dispatch({ type: 'CLEAR_BETS' })
+  }
+
+  function handleFreeHand(): void {
+    if (state.phase !== 'betting') return
+    dispatch({ type: 'FREE_HAND' })
+    playDealSound()
+  }
+
+  function handleRebet(): void {
+    if (!canRebet) return
+    dispatch({ type: 'REBET' })
+    playChipSound()
   }
 
   function handleDeal(): void {
@@ -94,8 +110,14 @@ export function Table() {
         <span className="table__bankroll">Bankroll: ${state.bankroll.toFixed(2)}</span>
         {state.phase === 'betting' ? (
           <>
+            <button type="button" onClick={handleRebet} disabled={!canRebet}>
+              Rebet
+            </button>
             <button type="button" onClick={handleClear} disabled={totalWagered === 0}>
               Clear
+            </button>
+            <button type="button" onClick={handleFreeHand}>
+              Free Hand
             </button>
             <button type="button" onClick={handleDeal} disabled={!canDeal}>
               Deal
