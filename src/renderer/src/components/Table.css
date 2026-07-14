@@ -1,0 +1,50 @@
+/* src/renderer/src/components/Table.css */
+.table {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: radial-gradient(ellipse at center, #0b5e33 0%, #063a20 100%);
+  border-radius: 16px;
+  border: 6px solid #4a2f1a;
+}
+
+.table__hands {
+  display: flex;
+  gap: 48px;
+}
+
+.table__spots {
+  display: flex;
+  gap: 16px;
+}
+
+.table__spot {
+  min-width: 100px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.table__spot:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.table__spot-label {
+  font-weight: 700;
+}
+
+.table__controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #fff;
+}
