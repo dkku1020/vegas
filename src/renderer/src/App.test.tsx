@@ -31,6 +31,14 @@ describe('App', () => {
     })
   })
 
+  it('shows the rebuy dialog when the bankroll is below the table minimum', async () => {
+    mockElectronAPI(3)
+    render(<App />)
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: 'Rebuy' })).toBeInTheDocument()
+    })
+  })
+
   it('hides the rebuy dialog once funds are added', async () => {
     mockElectronAPI(0)
     render(<App />)

@@ -91,7 +91,7 @@ export function Table() {
       <ChipRack selectedValue={selectedChip} onSelect={setSelectedChip} />
 
       <div className="table__controls">
-        <span className="table__bankroll">Bankroll: ${state.bankroll}</span>
+        <span className="table__bankroll">Bankroll: ${state.bankroll.toFixed(2)}</span>
         {state.phase === 'betting' ? (
           <>
             <button type="button" onClick={handleClear} disabled={totalWagered === 0}>

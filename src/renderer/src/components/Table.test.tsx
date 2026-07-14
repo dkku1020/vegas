@@ -49,7 +49,7 @@ async function renderTable() {
       <Table />
     </GameProvider>
   )
-  await waitFor(() => expect(screen.getByText('Bankroll: $1000')).toBeInTheDocument())
+  await waitFor(() => expect(screen.getByText('Bankroll: $1000.00')).toBeInTheDocument())
 }
 
 describe('Table', () => {
@@ -57,7 +57,7 @@ describe('Table', () => {
     await renderTable()
     fireEvent.click(screen.getByTestId('chip-25'))
     fireEvent.click(screen.getByTestId('bet-spot-player'))
-    await waitFor(() => expect(screen.getByText('Bankroll: $975')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Bankroll: $975.00')).toBeInTheDocument())
   })
 
   it('disables Deal until the table minimum is met', async () => {
@@ -72,17 +72,17 @@ describe('Table', () => {
     await renderTable()
     fireEvent.click(screen.getByTestId('chip-25'))
     fireEvent.click(screen.getByTestId('bet-spot-player'))
-    await waitFor(() => expect(screen.getByText('Bankroll: $975')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Bankroll: $975.00')).toBeInTheDocument())
     fireEvent.click(screen.getByText('Clear'))
-    await waitFor(() => expect(screen.getByText('Bankroll: $1000')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Bankroll: $1000.00')).toBeInTheDocument())
   })
 
   it('stops accepting chips on a spot once the $500 table max is reached', async () => {
     await renderTable()
     fireEvent.click(screen.getByTestId('chip-500'))
     fireEvent.click(screen.getByTestId('bet-spot-player')) // spot now at $500
-    await waitFor(() => expect(screen.getByText('Bankroll: $500')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Bankroll: $500.00')).toBeInTheDocument())
     fireEvent.click(screen.getByTestId('bet-spot-player')) // should be rejected, spot already at max
-    await waitFor(() => expect(screen.getByText('Bankroll: $500')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Bankroll: $500.00')).toBeInTheDocument())
   })
 })

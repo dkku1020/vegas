@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useReducer, type Dispatch, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useReducer,
+  useState,
+  type Dispatch,
+  type ReactNode
+} from 'react'
 import { gameReducer, createInitialState, type GameState, type GameAction } from './gameReducer'
 
 const STARTING_BANKROLL = 1000
@@ -14,12 +22,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(gameReducer, undefined, () =>
     createInitialState(STARTING_BANKROLL)
   )
+  const [hasLoaded, setHasLoaded] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     window.electronAPI.loadBankroll().then((bankroll) => {
       if (!cancelled) {
         dispatch({ type: 'SET_BANKROLL', amount: bankroll })
+        setHasLoaded(true)
       }
     })
     return () => {
@@ -28,8 +38,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    if (!hasLoaded) return
     window.electronAPI.saveBankroll(state.bankroll)
-  }, [state.bankroll])
+  }, [state.bankroll, hasLoaded])
 
   return <GameContext.Provider value={{ state, dispatch }}>{children}</GameContext.Provider>
 }

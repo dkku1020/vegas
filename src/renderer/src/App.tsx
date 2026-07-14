@@ -4,11 +4,12 @@ import { Table } from './components/Table'
 import { BigRoad } from './components/BigRoad'
 import { StatsPanel } from './components/StatsPanel'
 import { RebuyDialog } from './components/RebuyDialog'
+import { TABLE_MIN_BET } from './state/gameReducer'
 import './App.css'
 
 function GameScreen() {
   const { state, dispatch } = useGame()
-  const isBust = state.bankroll === 0 && state.phase === 'betting'
+  const isBust = state.bankroll < TABLE_MIN_BET && state.phase === 'betting'
 
   return (
     <div className="app">
