@@ -24,6 +24,7 @@ export type GameAction =
   | { type: 'PLACE_BET'; spot: BetSpot; amount: number }
   | { type: 'CLEAR_BETS' }
   | { type: 'DEAL' }
+  | { type: 'FREE_HAND' }
   | { type: 'NEW_HAND' }
   | { type: 'ADD_FUNDS'; amount: number }
   | { type: 'SET_BANKROLL'; amount: number }
@@ -87,6 +88,32 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         lastResult: result,
         lastSettlement: settlement,
         lastBets: { ...state.bets },
+        shoeHistory: [...state.shoeHistory, historyEntry],
+        sessionHistory: [...state.sessionHistory, historyEntry]
+      }
+    }
+    case 'FREE_HAND': {
+      if (state.phase !== 'betting') return state
+      const refundedBankroll =
+        state.bankroll + state.bets.player + state.bets.banker + state.bets.tie
+      const zeroBets: Bets = { player: 0, banker: 0, tie: 0 }
+      const result = playHand(state.shoe)
+      const settlement = computeSettlement(zeroBets, result.outcome)
+      const historyEntry: HandHistoryEntry = {
+        outcome: result.outcome,
+        playerTotal: result.playerTotal,
+        bankerTotal: result.bankerTotal,
+        netChange: settlement.netChange
+      }
+
+      return {
+        ...state,
+        bankroll: refundedBankroll,
+        bets: zeroBets,
+        shoe: result.shoe,
+        phase: 'result',
+        lastResult: result,
+        lastSettlement: settlement,
         shoeHistory: [...state.shoeHistory, historyEntry],
         sessionHistory: [...state.sessionHistory, historyEntry]
       }

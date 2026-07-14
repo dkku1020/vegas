@@ -121,4 +121,33 @@ describe('gameReducer', () => {
     expect(gameReducer(state, { type: 'SET_BANKROLL', amount: 750 }).bankroll).toBe(750)
     expect(gameReducer(state, { type: 'SET_BANKROLL', amount: -20 }).bankroll).toBe(0)
   })
+
+  it('FREE_HAND refunds any placed bets and settles a zero-stake hand', () => {
+    const state = stateWithShoe({ bankroll: 900, bets: { player: 100, banker: 0, tie: 0 } })
+    const next = gameReducer(state, { type: 'FREE_HAND' })
+    expect(next.phase).toBe('result')
+    expect(next.bankroll).toBe(1000)
+    expect(next.bets).toEqual({ player: 0, banker: 0, tie: 0 })
+    expect(next.lastSettlement?.netChange).toBe(0)
+    expect(next.shoeHistory).toHaveLength(1)
+    expect(next.sessionHistory).toHaveLength(1)
+  })
+
+  it('FREE_HAND does not overwrite lastBets from a prior real wager', () => {
+    const dealt = gameReducer(
+      stateWithShoe({ bankroll: 900, bets: { player: 100, banker: 0, tie: 0 } }),
+      { type: 'DEAL' }
+    )
+    // Default cutIndex equals the 4-card shoe length, so NEW_HAND reshuffles
+    // here, giving FREE_HAND a full shoe to draw from.
+    const afterNewHand = gameReducer(dealt, { type: 'NEW_HAND' })
+    const free = gameReducer(afterNewHand, { type: 'FREE_HAND' })
+    expect(free.lastBets).toEqual({ player: 100, banker: 0, tie: 0 })
+  })
+
+  it('FREE_HAND is a no-op outside the betting phase', () => {
+    const state = stateWithShoe({ phase: 'result' })
+    const next = gameReducer(state, { type: 'FREE_HAND' })
+    expect(next).toBe(state)
+  })
 })
