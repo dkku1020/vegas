@@ -49,10 +49,12 @@ Starting from a `startingBankroll`, play hands until either `shoesPerSession` sh
 Per-hand loop:
 1. If `bankroll < TABLE_MIN_BET`, stop the session with `busted: true` (mirrors the existing rebuy threshold used in play mode).
 2. Call the strategy with the current `StrategyContext` to get `bets`.
-3. Validate: each spot amount `>= 0` and `<= TABLE_MAX_BET`, and `bets.player + bets.banker + bets.tie <= bankroll`. An invalid response **throws** — a misbehaving strategy is a programming error, not a runtime condition to clamp around silently.
-4. Debit the total wager from bankroll, `playHand(shoe)`, `computeSettlement(bets, outcome)`, credit payouts back to bankroll.
-5. Append a `SimHandRecord` to both `shoeHistory` and `sessionHistory`; increment `handsPlayed`.
-6. If `isPastCutCard(shoe)`, reshuffle via `createShoe(randomFn)`, reset `shoeHistory` to `[]`, increment `shoesCompleted`.
+3. Validate the bet *shape*: each spot amount `>= 0` and `<= TABLE_MAX_BET`. An invalid response **throws** — a negative or over-table-max bet is a programming error, not a runtime condition to clamp around silently.
+4. Check *affordability*: if `bets.player + bets.banker + bets.tie > bankroll`, stop the session with `busted: true` rather than throwing. This is not a strategy bug — a fixed-size strategy naturally outgrows a shrinking bankroll on a losing streak, and that is a normal way for a session to end, not an error condition.
+5. Debit the total wager from bankroll, `playHand(shoe)`, `computeSettlement(bets, outcome)`, credit payouts back to bankroll.
+6. Append a `SimHandRecord` to both `shoeHistory` and `sessionHistory`; increment `handsPlayed`.
+7. If `isPastCutCard(shoe)`, reshuffle via `createShoe(randomFn)`, reset `shoeHistory` to `[]`, increment `shoesCompleted`.
+8. After the loop ends (by either shoe count or a bust break), re-check `bankroll < TABLE_MIN_BET` once more and set `busted: true` if so — catches the case where the final hand of the last requested shoe drops the bankroll below the minimum on the same iteration the shoe-count target is reached.
 
 ```ts
 export interface SimSessionResult {

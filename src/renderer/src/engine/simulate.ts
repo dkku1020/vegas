@@ -21,7 +21,7 @@ export interface SimulateSessionConfig {
   randomFn: () => number
 }
 
-function validateBets(bets: Bets, bankroll: number): void {
+function validateBetShape(bets: Bets): void {
   for (const amount of [bets.player, bets.banker, bets.tie]) {
     if (amount < 0) {
       throw new Error(`Strategy returned a negative bet: ${amount}`)
@@ -31,12 +31,6 @@ function validateBets(bets: Bets, bankroll: number): void {
         `Strategy returned a bet of ${amount}, exceeding the table max of ${TABLE_MAX_BET}`
       )
     }
-  }
-  const total = bets.player + bets.banker + bets.tie
-  if (total > bankroll) {
-    throw new Error(
-      `Strategy returned a total bet of ${total}, exceeding the bankroll of ${bankroll}`
-    )
   }
 }
 
@@ -58,9 +52,17 @@ export function simulateSession(config: SimulateSessionConfig): SimSessionResult
 
     const context: StrategyContext = { bankroll, shoeHistory, sessionHistory }
     const bets = strategy(context)
-    validateBets(bets, bankroll)
+    validateBetShape(bets)
 
-    bankroll -= bets.player + bets.banker + bets.tie
+    const totalWagered = bets.player + bets.banker + bets.tie
+    if (totalWagered > bankroll) {
+      // The strategy's requested bet outgrew the bankroll (typical for a
+      // fixed-size strategy on a losing streak) — this is a bust, not a
+      // strategy bug, so the session ends here rather than throwing.
+      busted = true
+      break
+    }
+    bankroll -= totalWagered
 
     const result = playHand(shoe)
     shoe = result.shoe
@@ -76,6 +78,14 @@ export function simulateSession(config: SimulateSessionConfig): SimSessionResult
       shoeHistory = []
       shoesCompleted += 1
     }
+  }
+
+  // Catches the case where the final hand of the last requested shoe drops
+  // the bankroll below the table minimum on the same iteration the shoe
+  // count target is reached — the loop condition exits before the top-of-loop
+  // bust check runs again, so it's re-checked once more here.
+  if (bankroll < TABLE_MIN_BET) {
+    busted = true
   }
 
   return {

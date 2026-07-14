@@ -57,16 +57,29 @@ describe('simulateSession', () => {
     ).toThrow()
   })
 
-  it('throws when the strategy returns a total bet exceeding the bankroll', () => {
+  it('busts, rather than throwing, when the strategy requests more than the bankroll can cover', () => {
     const strategy = () => ({ player: 200, banker: 0, tie: 0 })
-    expect(() =>
-      simulateSession({
-        strategy,
-        startingBankroll: 100,
-        shoesPerSession: 1,
-        randomFn: mulberry32(1)
-      })
-    ).toThrow()
+    const result = simulateSession({
+      strategy,
+      startingBankroll: 100,
+      shoesPerSession: 1,
+      randomFn: mulberry32(1)
+    })
+    expect(result.busted).toBe(true)
+    expect(result.finalBankroll).toBe(100)
+    expect(result.handsPlayed).toBe(0)
+  })
+
+  it('busts a flat-bet strategy that can no longer afford its fixed bet, without throwing', () => {
+    const result = simulateSession({
+      strategy: flatBet('banker', 10),
+      startingBankroll: 8,
+      shoesPerSession: 1,
+      randomFn: mulberry32(1)
+    })
+    expect(result.busted).toBe(true)
+    expect(result.finalBankroll).toBe(8)
+    expect(result.handsPlayed).toBe(0)
   })
 
   it('plays more hands as shoesPerSession increases, given the same seed', () => {
