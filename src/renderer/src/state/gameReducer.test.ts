@@ -150,4 +150,43 @@ describe('gameReducer', () => {
     const next = gameReducer(state, { type: 'FREE_HAND' })
     expect(next).toBe(state)
   })
+
+  it('REBET re-places the last wagered bet distribution across all spots', () => {
+    const dealt = gameReducer(
+      stateWithShoe({ bankroll: 900, bets: { player: 60, banker: 0, tie: 40 } }),
+      { type: 'DEAL' }
+    )
+    const afterNewHand = gameReducer(dealt, { type: 'NEW_HAND' })
+    const rebet = gameReducer(afterNewHand, { type: 'REBET' })
+    expect(rebet.bets).toEqual({ player: 60, banker: 0, tie: 40 })
+    expect(rebet.bankroll).toBe(afterNewHand.bankroll - 100)
+  })
+
+  it('REBET is a no-op when there is no prior bet to repeat', () => {
+    const state = stateWithShoe()
+    const next = gameReducer(state, { type: 'REBET' })
+    expect(next).toBe(state)
+  })
+
+  it('REBET is a no-op when the table already has bets on it', () => {
+    const dealt = gameReducer(
+      stateWithShoe({ bankroll: 900, bets: { player: 60, banker: 0, tie: 0 } }),
+      { type: 'DEAL' }
+    )
+    const afterNewHand = gameReducer(dealt, { type: 'NEW_HAND' })
+    const withBet = gameReducer(afterNewHand, { type: 'PLACE_BET', spot: 'banker', amount: 5 })
+    const next = gameReducer(withBet, { type: 'REBET' })
+    expect(next).toBe(withBet)
+  })
+
+  it('REBET is a no-op when the bankroll cannot cover the prior bet total', () => {
+    const dealt = gameReducer(
+      stateWithShoe({ bankroll: 900, bets: { player: 60, banker: 0, tie: 40 } }),
+      { type: 'DEAL' }
+    )
+    const afterNewHand = gameReducer(dealt, { type: 'NEW_HAND' })
+    const poor = { ...afterNewHand, bankroll: 50 }
+    const next = gameReducer(poor, { type: 'REBET' })
+    expect(next).toBe(poor)
+  })
 })
