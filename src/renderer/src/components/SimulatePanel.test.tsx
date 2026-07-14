@@ -21,4 +21,13 @@ describe('SimulatePanel', () => {
     expect(screen.getByText('Avg net profit: $0.00')).toBeInTheDocument()
     expect(screen.getByText('Bust rate: 0%')).toBeInTheDocument()
   })
+
+  it('shows an error message instead of crashing when the simulation config is invalid', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Trials'), { target: { value: '0' } })
+    fireEvent.click(screen.getByText('Run'))
+
+    expect(screen.getByTestId('simulate-error')).toBeInTheDocument()
+    expect(screen.queryByTestId('simulate-results')).not.toBeInTheDocument()
+  })
 })

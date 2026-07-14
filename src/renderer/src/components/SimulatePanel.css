@@ -22,6 +22,11 @@
   font-size: 0.9rem;
 }
 
+.simulate-panel__error {
+  color: #ff8080;
+  font-size: 0.9rem;
+}
+
 .simulate-panel__results {
   display: flex;
   flex-direction: column;

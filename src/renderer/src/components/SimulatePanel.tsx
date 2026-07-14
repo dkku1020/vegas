@@ -13,16 +13,23 @@ export function SimulatePanel() {
   const [shoesPerSession, setShoesPerSession] = useState('1')
   const [trials, setTrials] = useState('100')
   const [result, setResult] = useState<SimulationResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   function handleRun(): void {
-    const strategy = flatBet(spot, Number(amount))
-    const next = runSimulation({
-      strategy,
-      startingBankroll: Number(startingBankroll),
-      shoesPerSession: Number(shoesPerSession),
-      trials: Number(trials)
-    })
-    setResult(next)
+    try {
+      const strategy = flatBet(spot, Number(amount))
+      const next = runSimulation({
+        strategy,
+        startingBankroll: Number(startingBankroll),
+        shoesPerSession: Number(shoesPerSession),
+        trials: Number(trials)
+      })
+      setResult(next)
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Simulation failed.')
+      setResult(null)
+    }
   }
 
   return (
@@ -66,6 +73,11 @@ export function SimulatePanel() {
           Run
         </button>
       </div>
+      {error && (
+        <div className="simulate-panel__error" data-testid="simulate-error">
+          {error}
+        </div>
+      )}
       {result && (
         <div className="simulate-panel__results" data-testid="simulate-results">
           <div>Trials: {result.summary.trialCount}</div>
