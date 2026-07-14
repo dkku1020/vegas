@@ -23,7 +23,7 @@ describe('RebuyDialog', () => {
     const onAddFunds = vi.fn()
     render(<RebuyDialog onAddFunds={onAddFunds} />)
     fireEvent.change(screen.getByPlaceholderText('Custom amount'), { target: { value: '250' } })
-    screen.getByText('Add Funds').click()
+    fireEvent.click(screen.getByText('Add Funds'))
     expect(onAddFunds).toHaveBeenCalledWith(250)
     expect(screen.getByPlaceholderText('Custom amount')).toHaveValue(null)
   })
