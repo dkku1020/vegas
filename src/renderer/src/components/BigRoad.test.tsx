@@ -27,4 +27,19 @@ describe('BigRoad', () => {
       container.querySelectorAll('.big-road__cell--player, .big-road__cell--banker')
     ).toHaveLength(0)
   })
+
+  it('always renders a 6x40 grid of cells, even with no history', () => {
+    const { container } = render(<BigRoad history={[]} />)
+    expect(container.querySelectorAll('.big-road__cell')).toHaveLength(240)
+  })
+
+  it('grows past 40 columns instead of clipping data when a shoe runs long', () => {
+    const history: HandHistoryEntry[] = Array.from({ length: 41 }, (_, i) =>
+      entry(i % 2 === 0 ? 'player' : 'banker')
+    )
+    const { container } = render(<BigRoad history={history} />)
+    expect(container.querySelectorAll('.big-road__cell')).toHaveLength(41 * 6)
+    expect(container.querySelectorAll('.big-road__cell--player')).toHaveLength(21)
+    expect(container.querySelectorAll('.big-road__cell--banker')).toHaveLength(20)
+  })
 })

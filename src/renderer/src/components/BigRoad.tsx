@@ -1,6 +1,8 @@
 import type { HandHistoryEntry } from '@shared/types'
-import { buildBigRoad } from '../state/bigRoad'
+import { buildBigRoad, ROWS } from '../state/bigRoad'
 import './BigRoad.css'
+
+const MIN_COLUMNS = 40
 
 interface BigRoadProps {
   history: HandHistoryEntry[]
@@ -8,25 +10,40 @@ interface BigRoadProps {
 
 export function BigRoad({ history }: BigRoadProps) {
   const grid = buildBigRoad(history)
-  const columnCount = Math.max(grid.length, 1)
+  const columnCount = Math.max(grid.length, MIN_COLUMNS)
+
+  const cells = Array.from({ length: columnCount }, (_, colIndex) =>
+    Array.from({ length: ROWS }, (_, rowIndex) => {
+      const cell = grid[colIndex]?.[rowIndex] ?? null
+      return (
+        <div
+          key={`${colIndex}-${rowIndex}`}
+          className={`big-road__cell${cell ? ` big-road__cell--${cell.outcome}` : ''}`}
+        >
+          {cell && (
+            <span className="big-road__circle">
+              {cell.tieCount > 0 && (
+                <>
+                  <span className="big-road__tie" />
+                  {cell.tieCount > 1 && (
+                    <span className="big-road__tie-count">{cell.tieCount}</span>
+                  )}
+                </>
+              )}
+            </span>
+          )}
+        </div>
+      )
+    })
+  ).flat()
 
   return (
-    <div className="big-road" data-testid="big-road">
-      {Array.from({ length: columnCount }).map((_, colIndex) => (
-        <div className="big-road__column" key={colIndex}>
-          {Array.from({ length: 6 }).map((_, rowIndex) => {
-            const cell = grid[colIndex]?.[rowIndex] ?? null
-            return (
-              <div
-                key={rowIndex}
-                className={`big-road__cell${cell ? ` big-road__cell--${cell.outcome}` : ''}`}
-              >
-                {cell && cell.tieCount > 0 && <span className="big-road__tie">/</span>}
-              </div>
-            )
-          })}
-        </div>
-      ))}
+    <div
+      className="big-road"
+      data-testid="big-road"
+      style={{ gridTemplateColumns: `repeat(${columnCount}, 26px)` }}
+    >
+      {cells}
     </div>
   )
 }

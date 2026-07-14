@@ -5,7 +5,7 @@ export interface BigRoadCell {
   tieCount: number
 }
 
-const ROWS = 6
+export const ROWS = 6
 
 export function buildBigRoad(history: HandHistoryEntry[]): (BigRoadCell | null)[][] {
   const grid: (BigRoadCell | null)[][] = []
