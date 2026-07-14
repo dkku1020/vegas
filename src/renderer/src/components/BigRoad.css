@@ -39,3 +39,24 @@
 .big-road__cell--banker .big-road__circle {
   border-color: #c0392b;
 }
+
+.big-road__tie {
+  position: absolute;
+  top: 50%;
+  left: -4px;
+  right: -4px;
+  height: 2px;
+  background: #1a7a3c;
+  transform: translateY(-50%) rotate(45deg);
+  pointer-events: none;
+}
+
+.big-road__tie-count {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: #1a7a3c;
+  line-height: 1;
+}

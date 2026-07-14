@@ -42,4 +42,19 @@ describe('BigRoad', () => {
     expect(container.querySelectorAll('.big-road__cell--player')).toHaveLength(21)
     expect(container.querySelectorAll('.big-road__cell--banker')).toHaveLength(20)
   })
+
+  it('shows no count badge for a single tie', () => {
+    const { container } = render(<BigRoad history={[entry('banker'), entry('tie')]} />)
+    expect(container.querySelectorAll('.big-road__tie')).toHaveLength(1)
+    expect(container.querySelectorAll('.big-road__tie-count')).toHaveLength(0)
+  })
+
+  it('shows a count badge for consecutive ties on the same cell', () => {
+    const { container } = render(
+      <BigRoad history={[entry('banker'), entry('tie'), entry('tie'), entry('tie')]} />
+    )
+    expect(container.querySelectorAll('.big-road__tie')).toHaveLength(1)
+    const badge = container.querySelector('.big-road__tie-count')
+    expect(badge?.textContent).toBe('3')
+  })
 })
