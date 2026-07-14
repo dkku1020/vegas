@@ -50,4 +50,25 @@ describe('App', () => {
       expect(screen.queryByRole('dialog', { name: 'Rebuy' })).not.toBeInTheDocument()
     })
   })
+
+  it('places the big road in a full-width row above the stacked table and stats panel', async () => {
+    mockElectronAPI(1000)
+    const { container } = render(<App />)
+    await waitFor(() => expect(screen.getByTestId('table')).toBeInTheDocument())
+
+    const layout = container.querySelector('.app__layout')
+    expect(layout).not.toBeNull()
+
+    const boardRow = layout!.querySelector('.app__board-row')
+    const tableRow = layout!.querySelector('.app__table-row')
+    expect(boardRow).not.toBeNull()
+    expect(tableRow).not.toBeNull()
+
+    expect(boardRow!.contains(screen.getByTestId('big-road'))).toBe(true)
+    expect(tableRow!.contains(screen.getByTestId('table'))).toBe(true)
+    expect(tableRow!.contains(screen.getByTestId('stats-panel'))).toBe(true)
+
+    const layoutChildren = Array.from(layout!.children)
+    expect(layoutChildren.indexOf(boardRow!)).toBeLessThan(layoutChildren.indexOf(tableRow!))
+  })
 })

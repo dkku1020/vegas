@@ -15,9 +15,13 @@ function GameScreen() {
     <div className="app">
       <TitleBarOverlay />
       <div className="app__layout">
-        <BigRoad history={state.shoeHistory} />
-        <Table />
-        <StatsPanel history={state.sessionHistory} />
+        <div className="app__board-row">
+          <BigRoad history={state.shoeHistory} />
+        </div>
+        <div className="app__table-row">
+          <Table />
+          <StatsPanel history={state.sessionHistory} />
+        </div>
       </div>
       {isBust && (
         <div className="app__rebuy-overlay">
