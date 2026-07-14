@@ -1,5 +1,6 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  ping: (): string => 'pong'
+  loadBankroll: (): Promise<number> => ipcRenderer.invoke('load-bankroll'),
+  saveBankroll: (amount: number): Promise<void> => ipcRenderer.invoke('save-bankroll', amount)
 })

@@ -1,5 +1,6 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'node:path'
+import { handleLoadBankroll, handleSaveBankroll } from './ipcHandlers'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -22,6 +23,9 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  ipcMain.handle('load-bankroll', () => handleLoadBankroll())
+  ipcMain.handle('save-bankroll', (_event, amount: number) => handleSaveBankroll(amount))
+
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
