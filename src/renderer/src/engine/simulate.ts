@@ -118,6 +118,11 @@ function median(values: number[]): number {
 
 export function runSimulation(config: RunSimulationConfig): SimulationResult {
   const { strategy, startingBankroll, shoesPerSession, trials, seed } = config
+
+  if (trials < 1) {
+    throw new Error(`runSimulation requires trials >= 1, got ${trials}`)
+  }
+
   const baseSeed = seed ?? Math.floor(Math.random() * 2 ** 31)
 
   const trialResults: SimSessionResult[] = []

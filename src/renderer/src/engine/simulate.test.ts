@@ -145,4 +145,16 @@ describe('runSimulation', () => {
     expect(result.summary.worstNetProfit).toBe(0)
     expect(result.summary.bustRate).toBe(0)
   })
+
+  it('throws when trials is less than 1', () => {
+    expect(() =>
+      runSimulation({
+        strategy: flatBet('banker', 0),
+        startingBankroll: 1000,
+        shoesPerSession: 1,
+        trials: 0,
+        seed: 1
+      })
+    ).toThrow()
+  })
 })
