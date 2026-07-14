@@ -4,6 +4,7 @@ import { createShoe, isPastCutCard, type Shoe } from './shoe'
 import { playHand } from './rules'
 import { computeSettlement } from './payouts'
 import type { Strategy, StrategyContext, SimHandRecord } from './strategy'
+import { mulberry32 } from './rng'
 
 export interface SimSessionResult {
   finalBankroll: number
@@ -84,4 +85,66 @@ export function simulateSession(config: SimulateSessionConfig): SimSessionResult
     handsPlayed: sessionHistory.length,
     shoesCompleted
   }
+}
+
+export interface SimulationSummary {
+  trialCount: number
+  avgNetProfit: number
+  medianNetProfit: number
+  bustRate: number
+  bestNetProfit: number
+  worstNetProfit: number
+  avgHandsPlayed: number
+}
+
+export interface SimulationResult {
+  trials: SimSessionResult[]
+  summary: SimulationSummary
+}
+
+export interface RunSimulationConfig {
+  strategy: Strategy
+  startingBankroll: number
+  shoesPerSession: number
+  trials: number
+  seed?: number
+}
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
+}
+
+export function runSimulation(config: RunSimulationConfig): SimulationResult {
+  const { strategy, startingBankroll, shoesPerSession, trials, seed } = config
+  const baseSeed = seed ?? Math.floor(Math.random() * 2 ** 31)
+
+  const trialResults: SimSessionResult[] = []
+  for (let i = 0; i < trials; i++) {
+    trialResults.push(
+      simulateSession({
+        strategy,
+        startingBankroll,
+        shoesPerSession,
+        randomFn: mulberry32(baseSeed + i)
+      })
+    )
+  }
+
+  const netProfits = trialResults.map((t) => t.netProfit)
+  const bustedCount = trialResults.filter((t) => t.busted).length
+  const handsPlayedTotal = trialResults.reduce((sum, t) => sum + t.handsPlayed, 0)
+
+  const summary: SimulationSummary = {
+    trialCount: trials,
+    avgNetProfit: netProfits.reduce((a, b) => a + b, 0) / trials,
+    medianNetProfit: median(netProfits),
+    bustRate: bustedCount / trials,
+    bestNetProfit: Math.max(...netProfits),
+    worstNetProfit: Math.min(...netProfits),
+    avgHandsPlayed: handsPlayedTotal / trials
+  }
+
+  return { trials: trialResults, summary }
 }
