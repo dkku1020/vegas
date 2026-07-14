@@ -1,0 +1,21 @@
+.chip {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px dashed rgba(255, 255, 255, 0.6);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s ease;
+}
+
+.chip:hover {
+  transform: translateY(-2px);
+}
+
+.chip--selected {
+  outline: 3px solid #ffd700;
+  outline-offset: 2px;
+}

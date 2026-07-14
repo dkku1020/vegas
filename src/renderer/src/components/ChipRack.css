@@ -1,0 +1,6 @@
+.chip-rack {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 12px;
+}
