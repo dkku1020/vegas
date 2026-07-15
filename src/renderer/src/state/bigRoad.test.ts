@@ -72,9 +72,9 @@ describe('getBigRoadPositions', () => {
     ])
   })
 
-  it('maps a tie to null instead of a new position', () => {
+  it('maps a tie to null instead of a new position, and does not break the streak', () => {
     const positions = getBigRoadPositions([entry('banker'), entry('tie'), entry('banker')])
-    expect(positions).toEqual([{ col: 0, row: 0 }, null, { col: 1, row: 0 }])
+    expect(positions).toEqual([{ col: 0, row: 0 }, null, { col: 0, row: 1 }])
   })
 
   it('overflows to the next column at the same row after 6 in a streak (dragon tail)', () => {
