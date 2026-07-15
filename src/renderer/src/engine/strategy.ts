@@ -23,7 +23,7 @@ export function flatBet(spot: BetSpot, amount: number): Strategy {
   }
 }
 
-function deriveLabouchereSequence(
+export function deriveLabouchereSequence(
   initialSequence: number[],
   unit: number,
   spot: BetSpot,
