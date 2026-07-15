@@ -1,0 +1,37 @@
+.analyze-panel {
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  padding: 16px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.analyze-panel__form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 280px;
+}
+
+.analyze-panel__form label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.analyze-panel__error {
+  color: #ff8080;
+  font-size: 0.9rem;
+}
+
+.analyze-panel__results {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  font-size: 0.9rem;
+}
