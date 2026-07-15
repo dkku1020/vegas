@@ -55,3 +55,9 @@ body {
   font-weight: 700;
   text-decoration: underline;
 }
+
+.app__stats-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}

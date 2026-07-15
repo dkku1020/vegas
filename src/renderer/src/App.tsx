@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { HandHistoryEntry } from '@shared/types'
 import { GameProvider, useGame } from './state/GameContext'
 import { TitleBarOverlay } from './components/TitleBarOverlay'
 import { Table } from './components/Table'
@@ -6,12 +7,17 @@ import { BigRoad } from './components/BigRoad'
 import { StatsPanel } from './components/StatsPanel'
 import { RebuyDialog } from './components/RebuyDialog'
 import { SimulatePanel } from './components/SimulatePanel'
+import { AnalyzePanel } from './components/AnalyzePanel'
 import { TABLE_MIN_BET } from './state/gameReducer'
 import './App.css'
 
-type AppMode = 'play' | 'simulate'
+type AppMode = 'play' | 'simulate' | 'analyze'
 
-function PlayScreen() {
+interface PlayScreenProps {
+  onAnalyze: (history: HandHistoryEntry[]) => void
+}
+
+function PlayScreen({ onAnalyze }: PlayScreenProps) {
   const { state, dispatch } = useGame()
   const isBust = state.bankroll < TABLE_MIN_BET && state.phase === 'betting'
 
@@ -23,7 +29,14 @@ function PlayScreen() {
         </div>
         <div className="app__table-row">
           <Table />
-          <StatsPanel history={state.sessionHistory} />
+          <div className="app__stats-row">
+            <StatsPanel history={state.sessionHistory} />
+            {state.shoeHistory.length > 0 && (
+              <button type="button" onClick={() => onAnalyze(state.shoeHistory)}>
+                Analyze Big Road
+              </button>
+            )}
+          </div>
         </div>
       </div>
       {isBust && (
@@ -37,6 +50,12 @@ function PlayScreen() {
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>('play')
+  const [analyzedHistory, setAnalyzedHistory] = useState<HandHistoryEntry[] | null>(null)
+
+  function handleAnalyze(history: HandHistoryEntry[]): void {
+    setAnalyzedHistory([...history])
+    setMode('analyze')
+  }
 
   return (
     <GameProvider>
@@ -53,8 +72,17 @@ export default function App() {
           >
             Simulate
           </button>
+          <button
+            type="button"
+            aria-pressed={mode === 'analyze'}
+            onClick={() => setMode('analyze')}
+          >
+            Analyze
+          </button>
         </div>
-        {mode === 'play' ? <PlayScreen /> : <SimulatePanel />}
+        {mode === 'play' && <PlayScreen onAnalyze={handleAnalyze} />}
+        {mode === 'simulate' && <SimulatePanel />}
+        {mode === 'analyze' && <AnalyzePanel history={analyzedHistory} />}
       </div>
     </GameProvider>
   )
