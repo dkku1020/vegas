@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { HandHistoryEntry } from '@shared/types'
-import { buildBigRoad } from './bigRoad'
+import { buildBigRoad, getBigRoadPositions } from './bigRoad'
 
 function entry(outcome: HandHistoryEntry['outcome']): HandHistoryEntry {
   return { outcome, playerTotal: 0, bankerTotal: 0, netChange: 0 }
@@ -43,5 +43,51 @@ describe('buildBigRoad', () => {
     expect(grid[0].every((cell) => cell?.outcome === 'banker')).toBe(true)
     expect(grid[1][5]?.outcome).toBe('banker')
     expect(grid[1][0]).toBeNull()
+  })
+})
+
+describe('getBigRoadPositions', () => {
+  it('returns an empty array for no history', () => {
+    expect(getBigRoadPositions([])).toEqual([])
+  })
+
+  it('places the first outcome at column 0, row 0', () => {
+    expect(getBigRoadPositions([entry('player')])).toEqual([{ col: 0, row: 0 }])
+  })
+
+  it('continues a streak down the same column', () => {
+    const positions = getBigRoadPositions([entry('banker'), entry('banker'), entry('banker')])
+    expect(positions).toEqual([
+      { col: 0, row: 0 },
+      { col: 0, row: 1 },
+      { col: 0, row: 2 }
+    ])
+  })
+
+  it('starts a new column when the outcome changes', () => {
+    const positions = getBigRoadPositions([entry('player'), entry('banker')])
+    expect(positions).toEqual([
+      { col: 0, row: 0 },
+      { col: 1, row: 0 }
+    ])
+  })
+
+  it('maps a tie to null instead of a new position', () => {
+    const positions = getBigRoadPositions([entry('banker'), entry('tie'), entry('banker')])
+    expect(positions).toEqual([{ col: 0, row: 0 }, null, { col: 1, row: 0 }])
+  })
+
+  it('overflows to the next column at the same row after 6 in a streak (dragon tail)', () => {
+    const history = Array.from({ length: 7 }, () => entry('banker'))
+    const positions = getBigRoadPositions(history)
+    expect(positions).toEqual([
+      { col: 0, row: 0 },
+      { col: 0, row: 1 },
+      { col: 0, row: 2 },
+      { col: 0, row: 3 },
+      { col: 0, row: 4 },
+      { col: 0, row: 5 },
+      { col: 1, row: 5 }
+    ])
   })
 })
