@@ -57,4 +57,28 @@ describe('BigRoad', () => {
     const badge = container.querySelector('.big-road__tie-count')
     expect(badge?.textContent).toBe('3')
   })
+
+  it('highlights the cell for a given history index', () => {
+    const { container } = render(
+      <BigRoad history={[entry('player'), entry('banker')]} highlightIndices={new Set([1])} />
+    )
+    const highlighted = container.querySelectorAll('.big-road__cell--highlight')
+    expect(highlighted).toHaveLength(1)
+    expect(highlighted[0].classList.contains('big-road__cell--banker')).toBe(true)
+  })
+
+  it('highlights nothing when highlightIndices is omitted', () => {
+    const { container } = render(<BigRoad history={[entry('player')]} />)
+    expect(container.querySelectorAll('.big-road__cell--highlight')).toHaveLength(0)
+  })
+
+  it('highlights every matching index, including across multiple columns', () => {
+    const { container } = render(
+      <BigRoad
+        history={[entry('player'), entry('banker'), entry('player')]}
+        highlightIndices={new Set([0, 2])}
+      />
+    )
+    expect(container.querySelectorAll('.big-road__cell--highlight')).toHaveLength(2)
+  })
 })

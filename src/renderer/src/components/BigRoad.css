@@ -60,3 +60,7 @@
   color: #1a7a3c;
   line-height: 1;
 }
+
+.big-road__cell--highlight {
+  background: #f5e642;
+}
