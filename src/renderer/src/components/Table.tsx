@@ -5,6 +5,7 @@ import { useGame } from '../state/GameContext'
 import { TABLE_MIN_BET, TABLE_MAX_BET } from '../state/gameReducer'
 import { ChipRack } from './ChipRack'
 import { Hand } from './Hand'
+import { PlayingCard } from './Card'
 import { playChipSound, playDealSound, playWinSound, playLoseSound } from '../sounds/soundManager'
 import './Table.css'
 
@@ -75,6 +76,10 @@ export function Table() {
 
   return (
     <div className="table" data-testid="table">
+      <div className="table__shoe-status" data-testid="shoe-status">
+        <PlayingCard card={state.shoe.burn.indicatorCard} />
+        <span>Burn card → {state.shoe.burn.cardsBurned} cards burned</span>
+      </div>
       <div className="table__hands">
         <Hand
           label="Player"

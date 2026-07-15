@@ -123,4 +123,15 @@ describe('Table', () => {
     fireEvent.click(screen.getByText('Rebet'))
     await waitFor(() => expect(screen.getByTestId('bet-spot-player')).toHaveTextContent('$25'))
   })
+
+  it('shows the burn card indicator and a plausible burn count when a new shoe starts', async () => {
+    await renderTable()
+    const status = screen.getByTestId('shoe-status')
+    expect(status.querySelector('.playing-card')).not.toBeNull()
+    const match = status.textContent?.match(/Burn card → (\d+) cards burned/)
+    expect(match).not.toBeNull()
+    const burnedCount = Number(match?.[1])
+    expect(burnedCount).toBeGreaterThanOrEqual(2)
+    expect(burnedCount).toBeLessThanOrEqual(11)
+  })
 })
