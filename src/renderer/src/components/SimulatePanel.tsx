@@ -1,14 +1,33 @@
 import { useState } from 'react'
 import type { BetSpot } from '@shared/types'
-import { flatBet } from '../engine/strategy'
+import { flatBet, labouchere } from '../engine/strategy'
 import { runSimulation, type SimulationResult } from '../engine/simulate'
 import './SimulatePanel.css'
 
 const SPOTS: BetSpot[] = ['player', 'banker', 'tie']
+const EVEN_MONEY_SPOTS: Array<'player' | 'banker'> = ['player', 'banker']
+
+type StrategyType = 'flat' | 'labouchere'
+
+function parseSequence(text: string): number[] {
+  const parts = text
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0)
+  const numbers = parts.map(Number)
+  if (numbers.some((n) => !Number.isFinite(n))) {
+    throw new Error(`Sequence must be a comma-separated list of numbers, got "${text}"`)
+  }
+  return numbers
+}
 
 export function SimulatePanel() {
+  const [strategyType, setStrategyType] = useState<StrategyType>('flat')
   const [spot, setSpot] = useState<BetSpot>('banker')
   const [amount, setAmount] = useState('10')
+  const [labouchereSpot, setLabouchereSpot] = useState<'player' | 'banker'>('banker')
+  const [sequence, setSequence] = useState('1,2,3,4')
+  const [unit, setUnit] = useState('5')
   const [startingBankroll, setStartingBankroll] = useState('1000')
   const [shoesPerSession, setShoesPerSession] = useState('1')
   const [trials, setTrials] = useState('100')
@@ -17,7 +36,10 @@ export function SimulatePanel() {
 
   function handleRun(): void {
     try {
-      const strategy = flatBet(spot, Number(amount))
+      const strategy =
+        strategyType === 'flat'
+          ? flatBet(spot, Number(amount))
+          : labouchere(labouchereSpot, parseSequence(sequence), Number(unit))
       const next = runSimulation({
         strategy,
         startingBankroll: Number(startingBankroll),
@@ -36,19 +58,57 @@ export function SimulatePanel() {
     <div className="simulate-panel" data-testid="simulate-panel">
       <div className="simulate-panel__form">
         <label>
-          Spot
-          <select value={spot} onChange={(e) => setSpot(e.target.value as BetSpot)}>
-            {SPOTS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
+          Strategy
+          <select
+            value={strategyType}
+            onChange={(e) => setStrategyType(e.target.value as StrategyType)}
+          >
+            <option value="flat">Flat Bet</option>
+            <option value="labouchere">Labouchere</option>
           </select>
         </label>
-        <label>
-          Amount
-          <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
-        </label>
+        {strategyType === 'flat' ? (
+          <>
+            <label>
+              Spot
+              <select value={spot} onChange={(e) => setSpot(e.target.value as BetSpot)}>
+                {SPOTS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Amount
+              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            </label>
+          </>
+        ) : (
+          <>
+            <label>
+              Spot
+              <select
+                value={labouchereSpot}
+                onChange={(e) => setLabouchereSpot(e.target.value as 'player' | 'banker')}
+              >
+                {EVEN_MONEY_SPOTS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Sequence
+              <input type="text" value={sequence} onChange={(e) => setSequence(e.target.value)} />
+            </label>
+            <label>
+              Unit
+              <input type="number" value={unit} onChange={(e) => setUnit(e.target.value)} />
+            </label>
+          </>
+        )}
         <label>
           Starting bankroll
           <input
