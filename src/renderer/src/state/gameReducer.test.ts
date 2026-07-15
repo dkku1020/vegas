@@ -4,7 +4,12 @@ import type { Shoe } from '../engine/shoe'
 import { gameReducer, createInitialState, type GameState } from './gameReducer'
 
 function makeShoe(cards: Card[], cutIndex = cards.length): Shoe {
-  return { cards, drawIndex: 0, cutIndex }
+  return {
+    cards,
+    drawIndex: 0,
+    cutIndex,
+    burn: { indicatorCard: cards[0], cardsBurned: 0 }
+  }
 }
 
 const NATURAL_PLAYER_WIN_CARDS: Card[] = [
@@ -105,7 +110,10 @@ describe('gameReducer', () => {
     expect(dealt.shoe.drawIndex).toBe(4)
     const next = gameReducer(dealt, { type: 'NEW_HAND' })
     expect(next.shoe.cards).toHaveLength(416)
-    expect(next.shoe.drawIndex).toBe(0)
+    // A freshly reshuffled shoe burns the indicator card plus its value in
+    // additional cards, so drawIndex starts past 0 rather than at it.
+    expect(next.shoe.drawIndex).toBe(next.shoe.burn.cardsBurned)
+    expect(next.shoe.drawIndex).toBeGreaterThan(0)
     expect(next.shoeHistory).toHaveLength(0)
     expect(next.sessionHistory).toHaveLength(1)
   })

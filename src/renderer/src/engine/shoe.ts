@@ -5,10 +5,22 @@ const RANKS: Rank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', '
 const DECK_COUNT = 8
 const CUT_CARD_FROM_END = 14
 
+export interface BurnInfo {
+  indicatorCard: Card
+  cardsBurned: number
+}
+
 export interface Shoe {
   cards: Card[]
   drawIndex: number
   cutIndex: number
+  burn: BurnInfo
+}
+
+export function burnCardValue(rank: Rank): number {
+  if (rank === 'A') return 1
+  if (rank === '10' || rank === 'J' || rank === 'Q' || rank === 'K') return 10
+  return parseInt(rank, 10)
 }
 
 export function createShoe(randomFn: () => number = Math.random): Shoe {
@@ -21,10 +33,15 @@ export function createShoe(randomFn: () => number = Math.random): Shoe {
     }
   }
   shuffle(cards, randomFn)
+
+  const indicatorCard = cards[0]
+  const cardsBurned = burnCardValue(indicatorCard.rank) + 1
+
   return {
     cards,
-    drawIndex: 0,
-    cutIndex: cards.length - CUT_CARD_FROM_END
+    drawIndex: cardsBurned,
+    cutIndex: cards.length - CUT_CARD_FROM_END,
+    burn: { indicatorCard, cardsBurned }
   }
 }
 

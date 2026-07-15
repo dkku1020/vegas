@@ -91,7 +91,12 @@ describe('bankerShouldDraw', () => {
 })
 
 function makeShoe(cards: Card[]): Shoe {
-  return { cards, drawIndex: 0, cutIndex: cards.length }
+  return {
+    cards,
+    drawIndex: 0,
+    cutIndex: cards.length,
+    burn: { indicatorCard: cards[0], cardsBurned: 0 }
+  }
 }
 
 describe('playHand', () => {
