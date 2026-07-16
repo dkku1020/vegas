@@ -197,4 +197,65 @@ describe('gameReducer', () => {
     const next = gameReducer(poor, { type: 'REBET' })
     expect(next).toBe(poor)
   })
+
+  it('FINISH_SHOE refunds active bets and free-rolls hands until the cut card is passed', () => {
+    const threeNaturalHands: Card[] = [
+      ...NATURAL_PLAYER_WIN_CARDS,
+      ...NATURAL_PLAYER_WIN_CARDS,
+      ...NATURAL_PLAYER_WIN_CARDS
+    ]
+    const state = stateWithShoe({
+      bankroll: 900,
+      bets: { player: 100, banker: 0, tie: 0 },
+      shoe: makeShoe(threeNaturalHands, 9)
+    })
+    const next = gameReducer(state, { type: 'FINISH_SHOE' })
+    expect(next.phase).toBe('result')
+    expect(next.bankroll).toBe(1000)
+    expect(next.bets).toEqual({ player: 0, banker: 0, tie: 0 })
+    expect(next.shoeHistory).toHaveLength(3)
+    expect(next.sessionHistory).toHaveLength(3)
+    expect(next.shoe.drawIndex).toBe(12)
+  })
+
+  it('FINISH_SHOE continues correctly when starting from the result phase', () => {
+    const threeNaturalHands: Card[] = [
+      ...NATURAL_PLAYER_WIN_CARDS,
+      ...NATURAL_PLAYER_WIN_CARDS,
+      ...NATURAL_PLAYER_WIN_CARDS
+    ]
+    const dealt = gameReducer(
+      stateWithShoe({
+        bankroll: 900,
+        bets: { player: 100, banker: 0, tie: 0 },
+        shoe: makeShoe(threeNaturalHands, 9)
+      }),
+      { type: 'DEAL' }
+    )
+    expect(dealt.phase).toBe('result')
+    expect(dealt.shoeHistory).toHaveLength(1)
+    const next = gameReducer(dealt, { type: 'FINISH_SHOE' })
+    expect(next.bankroll).toBe(dealt.bankroll) // no double-refund of an already-settled hand
+    expect(next.bets).toEqual({ player: 0, banker: 0, tie: 0 })
+    expect(next.shoeHistory).toHaveLength(3)
+    expect(next.sessionHistory).toHaveLength(3)
+  })
+
+  it('FINISH_SHOE does not overwrite lastBets from a prior real wager', () => {
+    const dealt = gameReducer(
+      stateWithShoe({ bankroll: 900, bets: { player: 100, banker: 0, tie: 0 } }),
+      { type: 'DEAL' }
+    )
+    const afterNewHand = gameReducer(dealt, { type: 'NEW_HAND' })
+    const finished = gameReducer(afterNewHand, { type: 'FINISH_SHOE' })
+    expect(finished.lastBets).toEqual({ player: 100, banker: 0, tie: 0 })
+  })
+
+  it('FINISH_SHOE is a no-op beyond clearing bets when the shoe is already past the cut card', () => {
+    const state = stateWithShoe({ phase: 'result', shoe: makeShoe(NATURAL_PLAYER_WIN_CARDS, 0) })
+    const next = gameReducer(state, { type: 'FINISH_SHOE' })
+    expect(next.shoeHistory).toHaveLength(0)
+    expect(next.shoe).toBe(state.shoe)
+    expect(next.lastResult).toBe(state.lastResult)
+  })
 })

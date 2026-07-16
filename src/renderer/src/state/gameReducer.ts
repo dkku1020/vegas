@@ -25,6 +25,7 @@ export type GameAction =
   | { type: 'CLEAR_BETS' }
   | { type: 'DEAL' }
   | { type: 'FREE_HAND' }
+  | { type: 'FINISH_SHOE' }
   | { type: 'REBET' }
   | { type: 'NEW_HAND' }
   | { type: 'ADD_FUNDS'; amount: number }
@@ -117,6 +118,44 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         lastSettlement: settlement,
         shoeHistory: [...state.shoeHistory, historyEntry],
         sessionHistory: [...state.sessionHistory, historyEntry]
+      }
+    }
+    case 'FINISH_SHOE': {
+      const zeroBets: Bets = { player: 0, banker: 0, tie: 0 }
+      let bankroll = state.bankroll
+      if (state.phase === 'betting') {
+        bankroll += state.bets.player + state.bets.banker + state.bets.tie
+      }
+      let shoe = state.shoe
+      let lastResult = state.lastResult
+      let lastSettlement = state.lastSettlement
+      const shoeHistory = [...state.shoeHistory]
+      const sessionHistory = [...state.sessionHistory]
+      while (!isPastCutCard(shoe)) {
+        const result = playHand(shoe)
+        const settlement = computeSettlement(zeroBets, result.outcome)
+        shoe = result.shoe
+        lastResult = result
+        lastSettlement = settlement
+        const historyEntry: HandHistoryEntry = {
+          outcome: result.outcome,
+          playerTotal: result.playerTotal,
+          bankerTotal: result.bankerTotal,
+          netChange: settlement.netChange
+        }
+        shoeHistory.push(historyEntry)
+        sessionHistory.push(historyEntry)
+      }
+      return {
+        ...state,
+        bankroll,
+        bets: zeroBets,
+        shoe,
+        phase: 'result',
+        lastResult,
+        lastSettlement,
+        shoeHistory,
+        sessionHistory
       }
     }
     case 'REBET': {
