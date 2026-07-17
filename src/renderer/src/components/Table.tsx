@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import type { BetSpot } from '@shared/types'
 import { useGame } from '../state/GameContext'
+import { isPastCutCard } from '../engine/shoe'
 import { TABLE_MIN_BET, TABLE_MAX_BET } from '../state/gameReducer'
 import { ChipRack } from './ChipRack'
 import { Hand } from './Hand'
@@ -20,6 +21,7 @@ const SPOTS: BetSpot[] = ['player', 'tie', 'banker']
 export function Table() {
   const { state, dispatch } = useGame()
   const [selectedChip, setSelectedChip] = useState(5)
+  const [showFinishShoeConfirm, setShowFinishShoeConfirm] = useState(false)
 
   const totalWagered = state.bets.player + state.bets.banker + state.bets.tie
   const canBet = state.phase === 'betting'
@@ -72,6 +74,19 @@ export function Table() {
 
   function handleNewHand(): void {
     dispatch({ type: 'NEW_HAND' })
+  }
+
+  function handleFinishShoeClick(): void {
+    setShowFinishShoeConfirm(true)
+  }
+
+  function handleFinishShoeCancel(): void {
+    setShowFinishShoeConfirm(false)
+  }
+
+  function handleFinishShoeConfirm(): void {
+    dispatch({ type: 'FINISH_SHOE' })
+    setShowFinishShoeConfirm(false)
   }
 
   return (
@@ -133,7 +148,34 @@ export function Table() {
             Next Hand
           </button>
         )}
+        <button
+          type="button"
+          onClick={handleFinishShoeClick}
+          disabled={isPastCutCard(state.shoe)}
+        >
+          Finish Shoe
+        </button>
       </div>
+
+      {showFinishShoeConfirm && (
+        <div className="table__finish-shoe-overlay">
+          <div className="table__finish-shoe-dialog" role="dialog" aria-label="Finish Shoe">
+            <p>Simulate to the end of the shoe?</p>
+            <p className="table__finish-shoe-dialog-hint">
+              Any bets on the table will be refunded, and every remaining hand will be dealt
+              automatically.
+            </p>
+            <div className="table__finish-shoe-dialog-actions">
+              <button type="button" onClick={handleFinishShoeCancel}>
+                Cancel
+              </button>
+              <button type="button" onClick={handleFinishShoeConfirm}>
+                Yes, Finish Shoe
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
