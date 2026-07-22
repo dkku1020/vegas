@@ -4,7 +4,12 @@ import { analyzeLabouchereCompletions } from '../engine/analyze'
 import { BigRoad } from './BigRoad'
 import './AnalyzePanel.css'
 
-const EVEN_MONEY_SPOTS: Array<'player' | 'banker'> = ['player', 'banker']
+const LABOUCHERE_SPOTS: Array<'player' | 'banker' | 'follow' | 'counter'> = [
+  'player',
+  'banker',
+  'follow',
+  'counter'
+]
 
 interface AnalyzePanelProps {
   history: HandHistoryEntry[] | null
@@ -23,7 +28,7 @@ function parseSequence(text: string): number[] {
 }
 
 export function AnalyzePanel({ history }: AnalyzePanelProps) {
-  const [spot, setSpot] = useState<'player' | 'banker'>('banker')
+  const [spot, setSpot] = useState<'player' | 'banker' | 'follow' | 'counter'>('banker')
   const [sequence, setSequence] = useState('1,2,3,4')
   const [unit, setUnit] = useState('5')
   const [completions, setCompletions] = useState<number[] | null>(null)
@@ -66,8 +71,13 @@ export function AnalyzePanel({ history }: AnalyzePanelProps) {
         </label>
         <label>
           Spot
-          <select value={spot} onChange={(e) => setSpot(e.target.value as 'player' | 'banker')}>
-            {EVEN_MONEY_SPOTS.map((s) => (
+          <select
+            value={spot}
+            onChange={(e) =>
+              setSpot(e.target.value as 'player' | 'banker' | 'follow' | 'counter')
+            }
+          >
+            {LABOUCHERE_SPOTS.map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
