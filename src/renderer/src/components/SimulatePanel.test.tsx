@@ -52,6 +52,20 @@ describe('SimulatePanel', () => {
     expect(screen.getByText('Trials: 5')).toBeInTheDocument()
   })
 
+  it('runs a Labouchere simulation with a follow/counter spot option', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    fireEvent.change(screen.getByLabelText('Spot'), { target: { value: 'counter' } })
+    expect((screen.getByLabelText('Spot') as HTMLSelectElement).value).toBe('counter')
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '1,2' } })
+    fireEvent.change(screen.getByLabelText('Unit'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('Trials'), { target: { value: '5' } })
+    fireEvent.click(screen.getByText('Run'))
+
+    expect(screen.getByTestId('simulate-results')).toBeInTheDocument()
+    expect(screen.getByText('Trials: 5')).toBeInTheDocument()
+  })
+
   it('shows an error instead of crashing when the Labouchere sequence is invalid', () => {
     render(<SimulatePanel />)
     fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })

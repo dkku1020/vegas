@@ -31,6 +31,12 @@ describe('analyzeLabouchereCompletions', () => {
     expect(completions).toEqual([1])
   })
 
+  it('tracks completions for a follow spot, skipping the first hand of the shoe', () => {
+    const history = [entry('banker'), entry('banker')]
+    const completions = analyzeLabouchereCompletions(history, 'follow', [3, 4], 5)
+    expect(completions).toEqual([1])
+  })
+
   it('throws when the sequence is empty, mirroring labouchere() validation', () => {
     expect(() => analyzeLabouchereCompletions([], 'banker', [], 5)).toThrow()
   })

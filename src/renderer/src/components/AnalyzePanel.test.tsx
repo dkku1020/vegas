@@ -43,6 +43,17 @@ describe('AnalyzePanel', () => {
     expect(screen.queryByTestId('analyze-error')).not.toBeInTheDocument()
   })
 
+  it('supports follow and counter spot options and runs an analysis with them', () => {
+    const history: HandHistoryEntry[] = [entry('banker'), entry('banker')]
+    render(<AnalyzePanel history={history} />)
+    fireEvent.change(screen.getByLabelText('Spot'), { target: { value: 'follow' } })
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '3,4' } })
+    fireEvent.click(screen.getByText('Start Analysis'))
+
+    expect(screen.getByTestId('analyze-results')).toBeInTheDocument()
+    expect(screen.getByText('Sequence completed 1 times')).toBeInTheDocument()
+  })
+
   it('shows an error message instead of crashing when the sequence is invalid', () => {
     render(<AnalyzePanel history={[entry('banker')]} />)
     fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: 'abc' } })

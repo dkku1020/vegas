@@ -111,6 +111,84 @@ describe('labouchere', () => {
     expect(() => labouchere('tie', [1, 2], 5)).toThrow()
   })
 
+  it('follow bets the same side as the previous decisive winner', () => {
+    const strategy = labouchere('follow', [1, 2, 3, 4], 5)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'player', netChange: 0 }
+      ],
+      sessionHistory: []
+    }
+    const bets = strategy(context)
+    expect(bets.player).toBe(25)
+    expect(bets.banker).toBe(0)
+  })
+
+  it('counter bets the opposite side of the previous decisive winner', () => {
+    const strategy = labouchere('counter', [1, 2, 3, 4], 5)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'banker', netChange: 0 }
+      ],
+      sessionHistory: []
+    }
+    const bets = strategy(context)
+    expect(bets.player).toBe(25)
+    expect(bets.banker).toBe(0)
+  })
+
+  it('places no bet on the first hand of a shoe for follow', () => {
+    const strategy = labouchere('follow', [1, 2, 3, 4], 5)
+    expect(strategy(emptyContext)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
+  it('places no bet on the first hand of a shoe for counter', () => {
+    const strategy = labouchere('counter', [1, 2, 3, 4], 5)
+    expect(strategy(emptyContext)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
+  it('places no bet when only ties have occurred so far this shoe', () => {
+    const strategy = labouchere('follow', [1, 2, 3, 4], 5)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'tie', netChange: 0 },
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'tie', netChange: 0 }
+      ],
+      sessionHistory: []
+    }
+    expect(strategy(context)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
+  it('skips a tie mid-streak and keeps following the last decisive hand', () => {
+    const strategy = labouchere('follow', [1, 2, 3, 4], 5)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'banker', netChange: 0 },
+        { bets: { player: 0, banker: 25, tie: 0 }, outcome: 'tie', netChange: 0 }
+      ],
+      sessionHistory: []
+    }
+    const bets = strategy(context)
+    expect(bets.banker).toBe(25)
+    expect(bets.player).toBe(0)
+  })
+
+  it('resets to no bet at the start of a new shoe even with prior session history', () => {
+    const strategy = labouchere('follow', [1, 2, 3, 4], 5)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [],
+      sessionHistory: [
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'player', netChange: 25 }
+      ]
+    }
+    expect(strategy(context)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
   it('throws when the sequence is empty', () => {
     expect(() => labouchere('banker', [], 5)).toThrow()
   })
