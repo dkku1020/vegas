@@ -1,14 +1,19 @@
 import type { Bets, HandHistoryEntry } from '@shared/types'
-import { labouchere, deriveLabouchereSequence, type SimHandRecord } from './strategy'
+import {
+  labouchere,
+  deriveLabouchereSequence,
+  type LabouchereSpotMode,
+  type SimHandRecord
+} from './strategy'
 import { computeSettlement } from './payouts'
 
 export function analyzeLabouchereCompletions(
   history: HandHistoryEntry[],
-  spot: 'player' | 'banker',
+  spotMode: LabouchereSpotMode,
   sequence: number[],
   unit: number
 ): number[] {
-  const strategy = labouchere(spot, sequence, unit)
+  const strategy = labouchere(spotMode, sequence, unit)
   const initialSequence = [...sequence]
 
   const completions: number[] = []
@@ -28,7 +33,7 @@ export function analyzeLabouchereCompletions(
     }
     sessionHistory.push(record)
 
-    const remaining = deriveLabouchereSequence(initialSequence, unit, spot, sessionHistory)
+    const remaining = deriveLabouchereSequence(initialSequence, unit, sessionHistory)
     if (remaining.length === 0) {
       completions.push(i)
     }
