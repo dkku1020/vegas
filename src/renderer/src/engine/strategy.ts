@@ -15,6 +15,8 @@ export interface StrategyContext {
 
 export type Strategy = (context: StrategyContext) => Bets
 
+export type LabouchereSpotMode = BetSpot | 'follow' | 'counter'
+
 export function flatBet(spot: BetSpot, amount: number): Strategy {
   return () => {
     const bets: Bets = { player: 0, banker: 0, tie: 0 }
@@ -26,12 +28,11 @@ export function flatBet(spot: BetSpot, amount: number): Strategy {
 export function deriveLabouchereSequence(
   initialSequence: number[],
   unit: number,
-  spot: BetSpot,
   history: SimHandRecord[]
 ): number[] {
   let sequence = initialSequence
   for (const record of history) {
-    const wager = record.bets[spot]
+    const wager = record.bets.player + record.bets.banker
     if (wager <= 0) continue
     if (sequence.length === 0) {
       sequence = initialSequence
@@ -45,9 +46,27 @@ export function deriveLabouchereSequence(
   return sequence
 }
 
-export function labouchere(spot: BetSpot, sequence: number[], unit: number): Strategy {
-  if (spot === 'tie') {
-    throw new Error(`Labouchere requires spot to be 'player' or 'banker', got 'tie'`)
+function resolveDynamicSpot(
+  mode: 'follow' | 'counter',
+  shoeHistory: SimHandRecord[]
+): BetSpot | null {
+  for (let i = shoeHistory.length - 1; i >= 0; i--) {
+    const outcome = shoeHistory[i].outcome
+    if (outcome === 'tie') continue
+    return mode === 'follow' ? outcome : outcome === 'player' ? 'banker' : 'player'
+  }
+  return null
+}
+
+export function labouchere(
+  spotMode: LabouchereSpotMode,
+  sequence: number[],
+  unit: number
+): Strategy {
+  if (spotMode === 'tie') {
+    throw new Error(
+      `Labouchere requires spot to be 'player', 'banker', 'follow', or 'counter', got 'tie'`
+    )
   }
   if (sequence.length === 0) {
     throw new Error('Labouchere requires a non-empty starting sequence')
@@ -62,15 +81,23 @@ export function labouchere(spot: BetSpot, sequence: number[], unit: number): Str
   const initialSequence = [...sequence]
 
   return (context) => {
-    let current = deriveLabouchereSequence(initialSequence, unit, spot, context.sessionHistory)
+    const spot =
+      spotMode === 'player' || spotMode === 'banker'
+        ? spotMode
+        : resolveDynamicSpot(spotMode, context.shoeHistory)
+
+    let current = deriveLabouchereSequence(initialSequence, unit, context.sessionHistory)
     if (current.length === 0) {
       current = initialSequence
     }
 
+    const bets: Bets = { player: 0, banker: 0, tie: 0 }
+    if (spot === null) {
+      return bets
+    }
+
     const units = current.length === 1 ? current[0] : current[0] + current[current.length - 1]
     const betAmount = Math.min(units * unit, TABLE_MAX_BET)
-
-    const bets: Bets = { player: 0, banker: 0, tie: 0 }
     bets[spot] = betAmount
     return bets
   }
