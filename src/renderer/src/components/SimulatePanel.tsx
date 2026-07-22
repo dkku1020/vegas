@@ -5,7 +5,12 @@ import { runSimulation, type SimulationResult } from '../engine/simulate'
 import './SimulatePanel.css'
 
 const SPOTS: BetSpot[] = ['player', 'banker', 'tie']
-const EVEN_MONEY_SPOTS: Array<'player' | 'banker'> = ['player', 'banker']
+const LABOUCHERE_SPOTS: Array<'player' | 'banker' | 'follow' | 'counter'> = [
+  'player',
+  'banker',
+  'follow',
+  'counter'
+]
 
 type StrategyType = 'flat' | 'labouchere'
 
@@ -25,7 +30,9 @@ export function SimulatePanel() {
   const [strategyType, setStrategyType] = useState<StrategyType>('flat')
   const [spot, setSpot] = useState<BetSpot>('banker')
   const [amount, setAmount] = useState('10')
-  const [labouchereSpot, setLabouchereSpot] = useState<'player' | 'banker'>('banker')
+  const [labouchereSpot, setLabouchereSpot] = useState<'player' | 'banker' | 'follow' | 'counter'>(
+    'banker'
+  )
   const [sequence, setSequence] = useState('1,2,3,4')
   const [unit, setUnit] = useState('5')
   const [startingBankroll, setStartingBankroll] = useState('1000')
@@ -90,9 +97,11 @@ export function SimulatePanel() {
               Spot
               <select
                 value={labouchereSpot}
-                onChange={(e) => setLabouchereSpot(e.target.value as 'player' | 'banker')}
+                onChange={(e) =>
+                  setLabouchereSpot(e.target.value as 'player' | 'banker' | 'follow' | 'counter')
+                }
               >
-                {EVEN_MONEY_SPOTS.map((s) => (
+                {LABOUCHERE_SPOTS.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
