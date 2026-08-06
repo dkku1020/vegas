@@ -398,6 +398,170 @@ describe('labouchere', () => {
   it('throws when skip-after is not an integer', () => {
     expect(() => labouchere('player', [1, 2], 5, 1.5)).toThrow()
   })
+
+  it('blocks a new sequence once the hands-played threshold is met', () => {
+    const strategy = labouchere('banker', [3], 5, undefined, 1)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 15, tie: 0 }, outcome: 'banker', netChange: 15 }
+      ],
+      sessionHistory: [
+        { bets: { player: 0, banker: 15, tie: 0 }, outcome: 'banker', netChange: 15 }
+      ]
+    }
+    // sessionHistory: one wagered hand that won, collapsing [3] to []. shoeHistory.length (1)
+    // >= threshold (1), so the strategy must NOT fall back to a fresh [3] sequence.
+    expect(strategy(context)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
+  it('does not interrupt a sequence already in progress, regardless of hands played', () => {
+    const strategy = labouchere('banker', [1, 2, 3, 4], 5, undefined, 2)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 25, tie: 0 }, outcome: 'player', netChange: -25 },
+        { bets: { player: 0, banker: 30, tie: 0 }, outcome: 'player', netChange: -30 }
+      ],
+      sessionHistory: [
+        { bets: { player: 0, banker: 25, tie: 0 }, outcome: 'player', netChange: -25 },
+        { bets: { player: 0, banker: 30, tie: 0 }, outcome: 'player', netChange: -30 }
+      ]
+    }
+    // Two losses extend [1,2,3,4] to [1,2,3,4,5,6] — never empty, so the safety-net check
+    // (which only runs when the derived sequence IS empty) never applies, even though
+    // shoeHistory.length (2) already meets the threshold (2).
+    expect(strategy(context).banker).toBeGreaterThan(0)
+  })
+
+  it('allows a new sequence to start when below the hands-played threshold', () => {
+    const strategy = labouchere('banker', [3], 5, undefined, 5)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 15, tie: 0 }, outcome: 'banker', netChange: 15 }
+      ],
+      sessionHistory: [
+        { bets: { player: 0, banker: 15, tie: 0 }, outcome: 'banker', netChange: 15 }
+      ]
+    }
+    // shoeHistory.length (1) is below the threshold (5), so falling back to a fresh [3] is fine.
+    expect(strategy(context).banker).toBeGreaterThan(0)
+  })
+
+  it('blocks exactly at the threshold boundary, not one hand later', () => {
+    // shoeHistory and sessionHistory are independent inputs to this pure function (same
+    // pattern already used elsewhere in this file, e.g. the shoe-boundary-reset test): only
+    // sessionHistory needs the one wagered, won record that collapses [3] to empty — the
+    // extra zero-wager records in shoeHistory below are purely padding to control
+    // shoeHistory.length (the hands-played count) independently, without affecting sequence
+    // derivation, which reads sessionHistory only.
+    const strategy = labouchere('banker', [3], 5, undefined, 3)
+    const belowContext: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'player', netChange: 0 },
+        { bets: { player: 0, banker: 15, tie: 0 }, outcome: 'banker', netChange: 15 }
+      ],
+      sessionHistory: [
+        { bets: { player: 0, banker: 15, tie: 0 }, outcome: 'banker', netChange: 15 }
+      ]
+    }
+    // shoeHistory.length (2) is one below the threshold (3): still allowed.
+    expect(strategy(belowContext).banker).toBeGreaterThan(0)
+
+    const atContext: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'player', netChange: 0 },
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'player', netChange: 0 },
+        { bets: { player: 0, banker: 15, tie: 0 }, outcome: 'banker', netChange: 15 }
+      ],
+      sessionHistory: [
+        { bets: { player: 0, banker: 15, tie: 0 }, outcome: 'banker', netChange: 15 }
+      ]
+    }
+    // shoeHistory.length (3) meets the threshold (3) exactly: blocked.
+    expect(strategy(atContext)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
+  it('counts ties toward the hands-played threshold', () => {
+    const strategy = labouchere('banker', [3], 5, undefined, 1)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'tie', netChange: 0 }
+      ],
+      sessionHistory: [
+        { bets: { player: 0, banker: 15, tie: 0 }, outcome: 'banker', netChange: 15 }
+      ]
+    }
+    // A single tied hand still counts as one hand played this shoe, so shoeHistory.length (1)
+    // meets the threshold (1) — the hands-played count is a raw array length, unlike the
+    // loss-streak counters elsewhere in this file which specifically skip ties.
+    expect(strategy(context)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
+  it('keeps sitting out for the rest of the shoe once the safety net triggers', () => {
+    const strategy = labouchere('banker', [3], 5, undefined, 1)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 15, tie: 0 }, outcome: 'banker', netChange: 15 },
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'player', netChange: 0 }
+      ],
+      sessionHistory: [
+        { bets: { player: 0, banker: 15, tie: 0 }, outcome: 'banker', netChange: 15 },
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'player', netChange: 0 }
+      ]
+    }
+    // The zero-wager hand right after the completion doesn't advance the derived sequence
+    // (deriveLabouchereSequence skips zero-wager records entirely), so it's still empty here,
+    // and shoeHistory.length (2) still meets the threshold (1).
+    expect(strategy(context)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
+  it('resets the hands-played count at a new shoe boundary', () => {
+    const strategy = labouchere('banker', [3], 5, undefined, 1)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [],
+      sessionHistory: [
+        { bets: { player: 0, banker: 15, tie: 0 }, outcome: 'banker', netChange: 15 }
+      ]
+    }
+    // sessionHistory still shows a completed sequence (carried over from the prior shoe), but
+    // shoeHistory is freshly empty (new shoe), so 0 < threshold (1): a new sequence is allowed.
+    expect(strategy(context).banker).toBeGreaterThan(0)
+  })
+
+  it('can trigger even when skip-after is also set but its own condition is not met', () => {
+    const strategy = labouchere('banker', [3], 5, 5, 1)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 15, tie: 0 }, outcome: 'banker', netChange: 15 }
+      ],
+      sessionHistory: [
+        { bets: { player: 0, banker: 15, tie: 0 }, outcome: 'banker', netChange: 15 }
+      ]
+    }
+    // skipAfter=5 would need 5 consecutive losses against 'banker' to trigger — nowhere close
+    // here (the only hand recorded is a WIN). noNewSequenceAfter=1 triggers independently.
+    expect(strategy(context)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
+  it('throws when no-new-sequence-after is zero', () => {
+    expect(() => labouchere('banker', [1, 2], 5, undefined, 0)).toThrow()
+  })
+
+  it('throws when no-new-sequence-after is negative', () => {
+    expect(() => labouchere('banker', [1, 2], 5, undefined, -1)).toThrow()
+  })
+
+  it('throws when no-new-sequence-after is not an integer', () => {
+    expect(() => labouchere('banker', [1, 2], 5, undefined, 1.5)).toThrow()
+  })
 })
 
 describe('computePeakSequenceNumber', () => {

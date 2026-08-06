@@ -84,7 +84,8 @@ export function labouchere(
   spotMode: LabouchereSpotMode,
   sequence: number[],
   unit: number,
-  skipAfter?: number
+  skipAfter?: number,
+  noNewSequenceAfter?: number
 ): Strategy {
   if (spotMode === 'tie') {
     throw new Error(
@@ -105,6 +106,13 @@ export function labouchere(
       throw new Error(`Skip-after must be a positive integer, got ${skipAfter}`)
     }
   }
+  if (noNewSequenceAfter !== undefined) {
+    if (!Number.isInteger(noNewSequenceAfter) || noNewSequenceAfter <= 0) {
+      throw new Error(
+        `No-new-sequence-after must be a positive integer, got ${noNewSequenceAfter}`
+      )
+    }
+  }
 
   const initialSequence = [...sequence]
 
@@ -116,6 +124,9 @@ export function labouchere(
 
     let current = deriveLabouchereSequence(initialSequence, unit, context.sessionHistory)
     if (current.length === 0) {
+      if (noNewSequenceAfter !== undefined && context.shoeHistory.length >= noNewSequenceAfter) {
+        return { player: 0, banker: 0, tie: 0 }
+      }
       current = initialSequence
     }
 
