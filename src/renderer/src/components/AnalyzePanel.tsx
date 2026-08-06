@@ -44,6 +44,8 @@ export function AnalyzePanel({ history }: AnalyzePanelProps) {
   const [skipAfter, setSkipAfter] = useState('')
   const [completions, setCompletions] = useState<number[] | null>(null)
   const [skipped, setSkipped] = useState<number[]>([])
+  const [peakNumber, setPeakNumber] = useState(0)
+  const [peakIndex, setPeakIndex] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   if (!history) {
@@ -69,11 +71,15 @@ export function AnalyzePanel({ history }: AnalyzePanelProps) {
       )
       setCompletions(result.completions)
       setSkipped(result.skipped)
+      setPeakNumber(result.peakNumber)
+      setPeakIndex(result.peakIndex)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Analysis failed.')
       setCompletions(null)
       setSkipped([])
+      setPeakNumber(0)
+      setPeakIndex(null)
     }
   }
 
@@ -133,10 +139,12 @@ export function AnalyzePanel({ history }: AnalyzePanelProps) {
         <div className="analyze-panel__results" data-testid="analyze-results">
           <div>Sequence completed {completions.length} times</div>
           <div>{skipped.filter((i) => history[i].outcome !== 'tie').length} hands skipped</div>
+          <div>Highest sequence number: {peakNumber}</div>
           <BigRoad
             history={history}
             highlightIndices={new Set(completions)}
             skippedIndices={new Set(skipped)}
+            peakIndex={peakIndex}
           />
         </div>
       )}

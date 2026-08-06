@@ -121,4 +121,24 @@ describe('AnalyzePanel', () => {
     expect(screen.getByTestId('analyze-error')).toBeInTheDocument()
     expect(screen.queryByTestId('analyze-results')).not.toBeInTheDocument()
   })
+
+  it('shows the highest sequence number reached and marks the peak hand on the board', () => {
+    const history: HandHistoryEntry[] = [entry('player')]
+    const { container } = render(<AnalyzePanel history={history} />)
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '1,2,3,4' } })
+    fireEvent.click(screen.getByText('Start Analysis'))
+
+    expect(screen.getByText('Highest sequence number: 5')).toBeInTheDocument()
+    expect(container.querySelectorAll('.big-road__cell--peak')).toHaveLength(1)
+  })
+
+  it('shows the starting sequence max as the peak with no marked hand when it is never exceeded', () => {
+    const history: HandHistoryEntry[] = [entry('banker')]
+    const { container } = render(<AnalyzePanel history={history} />)
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '3,4' } })
+    fireEvent.click(screen.getByText('Start Analysis'))
+
+    expect(screen.getByText('Highest sequence number: 4')).toBeInTheDocument()
+    expect(container.querySelectorAll('.big-road__cell--peak')).toHaveLength(0)
+  })
 })
