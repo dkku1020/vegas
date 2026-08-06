@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { flatBet, labouchere, type StrategyContext } from './strategy'
+import { flatBet, labouchere, computePeakSequenceNumber, type StrategyContext } from './strategy'
 import { TABLE_MAX_BET } from '../state/gameReducer'
 
 const emptyContext: StrategyContext = { bankroll: 1000, shoeHistory: [], sessionHistory: [] }
@@ -300,5 +300,42 @@ describe('labouchere', () => {
 
   it('throws when skip-after is not an integer', () => {
     expect(() => labouchere('player', [1, 2], 5, 1.5)).toThrow()
+  })
+})
+
+describe('computePeakSequenceNumber', () => {
+  it('returns the starting sequence max when there is no history', () => {
+    expect(computePeakSequenceNumber([1, 2, 3, 4], 5, [])).toBe(4)
+  })
+
+  it('tracks a new peak after a loss appends a larger number', () => {
+    const history: SimHandRecord[] = [
+      { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 }
+    ]
+    expect(computePeakSequenceNumber([1, 2, 3, 4], 5, history)).toBe(5)
+  })
+
+  it('keeps the peak after a later win removes the number that set it', () => {
+    const history: SimHandRecord[] = [
+      { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 },
+      { bets: { player: 30, banker: 0, tie: 0 }, outcome: 'player', netChange: 28.5 }
+    ]
+    expect(computePeakSequenceNumber([1, 2, 3, 4], 5, history)).toBe(5)
+  })
+
+  it('keeps tracking the peak correctly after the sequence resets to a new line', () => {
+    const history: SimHandRecord[] = [
+      { bets: { player: 35, banker: 0, tie: 0 }, outcome: 'player', netChange: 33.25 },
+      { bets: { player: 35, banker: 0, tie: 0 }, outcome: 'banker', netChange: -35 }
+    ]
+    expect(computePeakSequenceNumber([3, 4], 5, history)).toBe(7)
+  })
+
+  it('is unaffected by a zero-wager hand from a Skip Bet After sit-out', () => {
+    const history: SimHandRecord[] = [
+      { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 },
+      { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'banker', netChange: 0 }
+    ]
+    expect(computePeakSequenceNumber([1, 2, 3, 4], 5, history)).toBe(5)
   })
 })

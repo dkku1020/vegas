@@ -128,3 +128,20 @@ export function labouchere(
     return bets
   }
 }
+
+export function computePeakSequenceNumber(
+  initialSequence: number[],
+  unit: number,
+  history: SimHandRecord[]
+): number {
+  let peak = Math.max(...initialSequence)
+  const seen: SimHandRecord[] = []
+  for (const record of history) {
+    seen.push(record)
+    const remaining = deriveLabouchereSequence(initialSequence, unit, seen)
+    if (remaining.length > 0) {
+      peak = Math.max(peak, ...remaining)
+    }
+  }
+  return peak
+}
