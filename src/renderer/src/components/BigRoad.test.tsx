@@ -81,4 +81,30 @@ describe('BigRoad', () => {
     )
     expect(container.querySelectorAll('.big-road__cell--highlight')).toHaveLength(2)
   })
+
+  it('dims the cell for a given skipped history index', () => {
+    const { container } = render(
+      <BigRoad history={[entry('player'), entry('banker')]} skippedIndices={new Set([1])} />
+    )
+    const skipped = container.querySelectorAll('.big-road__cell--skipped')
+    expect(skipped).toHaveLength(1)
+    expect(skipped[0].classList.contains('big-road__cell--banker')).toBe(true)
+  })
+
+  it('dims nothing when skippedIndices is omitted', () => {
+    const { container } = render(<BigRoad history={[entry('player')]} />)
+    expect(container.querySelectorAll('.big-road__cell--skipped')).toHaveLength(0)
+  })
+
+  it('dims every matching index independently of highlighted cells', () => {
+    const { container } = render(
+      <BigRoad
+        history={[entry('player'), entry('banker'), entry('player')]}
+        highlightIndices={new Set([0])}
+        skippedIndices={new Set([1, 2])}
+      />
+    )
+    expect(container.querySelectorAll('.big-road__cell--skipped')).toHaveLength(2)
+    expect(container.querySelectorAll('.big-road__cell--highlight')).toHaveLength(1)
+  })
 })
