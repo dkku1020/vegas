@@ -69,6 +69,10 @@
   opacity: 0.35;
 }
 
-.big-road__cell--peak .big-road__circle {
-  box-shadow: 0 0 0 1px #f5f1e6, 0 0 0 3px #8e44ad;
+.big-road__cell--peak {
+  background: #e74c3c;
+}
+
+.big-road__cell--peak.big-road__cell--highlight {
+  background: #f5a623;
 }
