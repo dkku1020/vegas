@@ -36,6 +36,16 @@ function parseSkipAfter(text: string): number | undefined {
   return value
 }
 
+function parseNoNewSequenceAfter(text: string): number | undefined {
+  const trimmed = text.trim()
+  if (trimmed.length === 0) return undefined
+  const value = Number(trimmed)
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`No new sequence after must be a positive integer, got "${text}"`)
+  }
+  return value
+}
+
 export function SimulatePanel() {
   const [strategyType, setStrategyType] = useState<StrategyType>('flat')
   const [spot, setSpot] = useState<BetSpot>('banker')
@@ -46,6 +56,7 @@ export function SimulatePanel() {
   const [sequence, setSequence] = useState('1,2,3,4')
   const [unit, setUnit] = useState('5')
   const [skipAfter, setSkipAfter] = useState('')
+  const [noNewSequenceAfter, setNoNewSequenceAfter] = useState('')
   const [startingBankroll, setStartingBankroll] = useState('1000')
   const [shoesPerSession, setShoesPerSession] = useState('1')
   const [trials, setTrials] = useState('100')
@@ -74,7 +85,8 @@ export function SimulatePanel() {
           labouchereSpot,
           parsedSequence,
           parsedUnit,
-          parseSkipAfter(skipAfter)
+          parseSkipAfter(skipAfter),
+          parseNoNewSequenceAfter(noNewSequenceAfter)
         )
         const peaks: number[] = []
         const next = runSimulation({
@@ -153,6 +165,15 @@ export function SimulatePanel() {
                 value={skipAfter}
                 onChange={(e) => setSkipAfter(e.target.value)}
                 placeholder="e.g. 4"
+              />
+            </label>
+            <label>
+              No new sequence after (hands)
+              <input
+                type="text"
+                value={noNewSequenceAfter}
+                onChange={(e) => setNoNewSequenceAfter(e.target.value)}
+                placeholder="e.g. 50"
               />
             </label>
             <label>

@@ -152,4 +152,42 @@ describe('SimulatePanel', () => {
     expect(screen.getByText(/Avg peak sequence number:/)).toBeInTheDocument()
     expect(screen.getByText(/Highest peak seen:/)).toBeInTheDocument()
   })
+
+  it('shows the No new sequence after field for Labouchere regardless of spot', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    expect(screen.getByLabelText('No new sequence after (hands)')).toBeInTheDocument()
+  })
+
+  it('hides the No new sequence after field for Flat Bet strategy', () => {
+    render(<SimulatePanel />)
+    expect(screen.queryByLabelText('No new sequence after (hands)')).not.toBeInTheDocument()
+  })
+
+  it('runs a Labouchere simulation with No new sequence after set', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '1,2' } })
+    fireEvent.change(screen.getByLabelText('Unit'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('No new sequence after (hands)'), {
+      target: { value: '50' }
+    })
+    fireEvent.change(screen.getByLabelText('Trials'), { target: { value: '5' } })
+    fireEvent.click(screen.getByText('Run'))
+
+    expect(screen.getByTestId('simulate-results')).toBeInTheDocument()
+    expect(screen.getByText('Trials: 5')).toBeInTheDocument()
+  })
+
+  it('shows an error when No new sequence after is not a positive integer', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    fireEvent.change(screen.getByLabelText('No new sequence after (hands)'), {
+      target: { value: '-1' }
+    })
+    fireEvent.click(screen.getByText('Run'))
+
+    expect(screen.getByTestId('simulate-error')).toBeInTheDocument()
+    expect(screen.queryByTestId('simulate-results')).not.toBeInTheDocument()
+  })
 })

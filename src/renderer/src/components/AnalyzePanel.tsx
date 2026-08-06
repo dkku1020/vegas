@@ -37,11 +37,22 @@ function parseSkipAfter(text: string): number | undefined {
   return value
 }
 
+function parseNoNewSequenceAfter(text: string): number | undefined {
+  const trimmed = text.trim()
+  if (trimmed.length === 0) return undefined
+  const value = Number(trimmed)
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`No new sequence after must be a positive integer, got "${text}"`)
+  }
+  return value
+}
+
 export function AnalyzePanel({ history }: AnalyzePanelProps) {
   const [spot, setSpot] = useState<'player' | 'banker' | 'follow' | 'counter'>('banker')
   const [sequence, setSequence] = useState('1,2,3,4')
   const [unit, setUnit] = useState('5')
   const [skipAfter, setSkipAfter] = useState('')
+  const [noNewSequenceAfter, setNoNewSequenceAfter] = useState('')
   const [completions, setCompletions] = useState<number[] | null>(null)
   const [skipped, setSkipped] = useState<number[]>([])
   const [peakNumber, setPeakNumber] = useState(0)
@@ -61,12 +72,14 @@ export function AnalyzePanel({ history }: AnalyzePanelProps) {
   function handleStartAnalysis(): void {
     try {
       const parsedSkipAfter = parseSkipAfter(skipAfter)
+      const parsedNoNewSequenceAfter = parseNoNewSequenceAfter(noNewSequenceAfter)
       const result = analyzeLabouchereCompletions(
         history as HandHistoryEntry[],
         spot,
         parseSequence(sequence),
         Number(unit),
-        parsedSkipAfter
+        parsedSkipAfter,
+        parsedNoNewSequenceAfter
       )
       setCompletions(result.completions)
       setSkipped(result.skipped)
@@ -113,6 +126,15 @@ export function AnalyzePanel({ history }: AnalyzePanelProps) {
             value={skipAfter}
             onChange={(e) => setSkipAfter(e.target.value)}
             placeholder="e.g. 4"
+          />
+        </label>
+        <label>
+          No new sequence after (hands)
+          <input
+            type="text"
+            value={noNewSequenceAfter}
+            onChange={(e) => setNoNewSequenceAfter(e.target.value)}
+            placeholder="e.g. 50"
           />
         </label>
         <label>

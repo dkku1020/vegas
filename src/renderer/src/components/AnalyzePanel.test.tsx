@@ -154,4 +154,37 @@ describe('AnalyzePanel', () => {
     expect(screen.getByText('Highest sequence number: 4')).toBeInTheDocument()
     expect(container.querySelectorAll('.big-road__cell--peak')).toHaveLength(0)
   })
+
+  it('shows the No new sequence after field', () => {
+    render(<AnalyzePanel history={[entry('banker')]} />)
+    expect(screen.getByLabelText('No new sequence after (hands)')).toBeInTheDocument()
+  })
+
+  it('runs an analysis with No new sequence after set and shows the safety-net sit-out as a dimmed skipped hand', () => {
+    const history: HandHistoryEntry[] = [entry('banker'), entry('banker'), entry('player')]
+    const { container } = render(<AnalyzePanel history={history} />)
+    fireEvent.change(screen.getByLabelText('Spot'), { target: { value: 'banker' } })
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '3' } })
+    fireEvent.change(screen.getByLabelText('No new sequence after (hands)'), {
+      target: { value: '1' }
+    })
+    fireEvent.click(screen.getByText('Start Analysis'))
+
+    // Same history/math as the analyze.ts test in Task 2: one completion (hand 0), two
+    // safety-net sit-outs (hands 1 and 2).
+    expect(screen.getByText('Sequence completed 1 times')).toBeInTheDocument()
+    expect(screen.getByText('2 hands skipped')).toBeInTheDocument()
+    expect(container.querySelectorAll('.big-road__cell--skipped')).toHaveLength(2)
+  })
+
+  it('shows an error when No new sequence after is not a positive integer', () => {
+    render(<AnalyzePanel history={[entry('banker')]} />)
+    fireEvent.change(screen.getByLabelText('No new sequence after (hands)'), {
+      target: { value: 'abc' }
+    })
+    fireEvent.click(screen.getByText('Start Analysis'))
+
+    expect(screen.getByTestId('analyze-error')).toBeInTheDocument()
+    expect(screen.queryByTestId('analyze-results')).not.toBeInTheDocument()
+  })
 })
