@@ -134,6 +134,46 @@ both are exposed the same way in the UI.
   exact same dimmed styling as loss-streak skips, merged into the same
   count — no new visual category.
 
+- **A second, pre-existing bug surfaces here and must be fixed alongside
+  the above.** The completion-tracking block is:
+  ```ts
+  const remaining = deriveLabouchereSequence(initialSequence, unit, sessionHistory)
+  if (remaining.length === 0) {
+    completions.push(i)
+  } else {
+    ...peak tracking...
+  }
+  ```
+  `deriveLabouchereSequence` returns whatever the sequence currently is —
+  it doesn't distinguish "this hand just completed it" from "the sequence
+  has been empty for a while and this hand didn't touch it." Zero-wager
+  hands (`wager <= 0`) are `continue`d inside `deriveLabouchereSequence`
+  without resetting `sequence`, so once a completion empties it, *every*
+  subsequent zero-wager hand also sees `remaining.length === 0` and gets
+  pushed onto `completions` again — over-reporting "sequence completed N
+  times" once per sit-out hand, not once per actual completion. This has
+  always been latent (it could already misfire after a `skipAfter`
+  sit-out), but no existing test exercises a completion immediately
+  followed by a sit-out, so it's never surfaced. The safety net makes it
+  surface constantly, by design — it exists specifically to produce long
+  strings of sit-out hands right after a completion. Fix, in the same
+  block:
+  ```ts
+  if (remaining.length === 0) {
+    if (totalWagered > 0) {
+      completions.push(i)
+    }
+  } else {
+    ...peak tracking, unchanged...
+  }
+  ```
+  A completion can only genuinely happen on the hand that wagered and won
+  it; a zero-wager hand can never cause one, so gating on `totalWagered > 0`
+  (already computed above this block for the skipped-hand check) is exact,
+  not a heuristic. The peak-tracking `else` branch is untouched — it was
+  never affected by this bug (it only runs when `remaining.length > 0`,
+  wager-count-independent).
+
 ## UI changes
 
 ### `SimulatePanel.tsx` / `AnalyzePanel.tsx`
@@ -169,8 +209,10 @@ both are exposed the same way in the UI.
    composes independently with `skipAfter`; validation errors.
 3. `src/renderer/src/engine/analyze.ts` — thread the new param through.
 4. `src/renderer/src/engine/analyze.test.ts` — a safety-net-triggered hand
-   is reported in `skipped` (reusing the existing mechanism, no new code
-   path to test beyond confirming the pass-through works end to end).
+   is reported in `skipped` when only `noNewSequenceAfter` is set (no
+   `skipAfter`); a completion followed by one or more safety-net sit-out
+   hands reports exactly one completion, not one per sit-out hand
+   (covers the `totalWagered > 0` fix above).
 5. `src/renderer/src/components/SimulatePanel.tsx` — new field, parsing,
    pass-through.
 6. `src/renderer/src/components/SimulatePanel.test.tsx` — field visible
