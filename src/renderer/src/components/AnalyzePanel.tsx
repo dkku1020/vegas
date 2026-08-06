@@ -27,11 +27,23 @@ function parseSequence(text: string): number[] {
   return numbers
 }
 
+function parseSkipAfter(text: string): number | undefined {
+  const trimmed = text.trim()
+  if (trimmed.length === 0) return undefined
+  const value = Number(trimmed)
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`Skip bet after must be a positive integer, got "${text}"`)
+  }
+  return value
+}
+
 export function AnalyzePanel({ history }: AnalyzePanelProps) {
   const [spot, setSpot] = useState<'player' | 'banker' | 'follow' | 'counter'>('banker')
   const [sequence, setSequence] = useState('1,2,3,4')
   const [unit, setUnit] = useState('5')
+  const [skipAfter, setSkipAfter] = useState('')
   const [completions, setCompletions] = useState<number[] | null>(null)
+  const [skipped, setSkipped] = useState<number[]>([])
   const [error, setError] = useState<string | null>(null)
 
   if (!history) {
@@ -46,17 +58,22 @@ export function AnalyzePanel({ history }: AnalyzePanelProps) {
 
   function handleStartAnalysis(): void {
     try {
+      const parsedSkipAfter =
+        spot === 'player' || spot === 'banker' ? parseSkipAfter(skipAfter) : undefined
       const result = analyzeLabouchereCompletions(
         history as HandHistoryEntry[],
         spot,
         parseSequence(sequence),
-        Number(unit)
+        Number(unit),
+        parsedSkipAfter
       )
-      setCompletions(result)
+      setCompletions(result.completions)
+      setSkipped(result.skipped)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Analysis failed.')
       setCompletions(null)
+      setSkipped([])
     }
   }
 
@@ -84,6 +101,17 @@ export function AnalyzePanel({ history }: AnalyzePanelProps) {
             ))}
           </select>
         </label>
+        {(spot === 'player' || spot === 'banker') && (
+          <label>
+            Skip bet after (losses)
+            <input
+              type="text"
+              value={skipAfter}
+              onChange={(e) => setSkipAfter(e.target.value)}
+              placeholder="e.g. 4"
+            />
+          </label>
+        )}
         <label>
           Sequence
           <input type="text" value={sequence} onChange={(e) => setSequence(e.target.value)} />
@@ -104,7 +132,12 @@ export function AnalyzePanel({ history }: AnalyzePanelProps) {
       {completions && (
         <div className="analyze-panel__results" data-testid="analyze-results">
           <div>Sequence completed {completions.length} times</div>
-          <BigRoad history={history} highlightIndices={new Set(completions)} />
+          <div>{skipped.length} hands skipped</div>
+          <BigRoad
+            history={history}
+            highlightIndices={new Set(completions)}
+            skippedIndices={new Set(skipped)}
+          />
         </div>
       )}
     </div>

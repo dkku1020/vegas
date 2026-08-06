@@ -62,4 +62,46 @@ describe('AnalyzePanel', () => {
     expect(screen.getByTestId('analyze-error')).toBeInTheDocument()
     expect(screen.queryByTestId('analyze-results')).not.toBeInTheDocument()
   })
+
+  it('shows the Skip bet after field for a fixed player/banker spot', () => {
+    render(<AnalyzePanel history={[entry('banker')]} />)
+    expect(screen.getByLabelText('Skip bet after (losses)')).toBeInTheDocument()
+  })
+
+  it('hides the Skip bet after field for follow/counter spots', () => {
+    render(<AnalyzePanel history={[entry('banker')]} />)
+    fireEvent.change(screen.getByLabelText('Spot'), { target: { value: 'follow' } })
+    expect(screen.queryByLabelText('Skip bet after (losses)')).not.toBeInTheDocument()
+  })
+
+  it('runs an analysis with skip bet after and shows the skipped count with dimmed cells', () => {
+    const history: HandHistoryEntry[] = [entry('banker'), entry('banker'), entry('player')]
+    const { container } = render(<AnalyzePanel history={history} />)
+    fireEvent.change(screen.getByLabelText('Spot'), { target: { value: 'player' } })
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '1,2,3,4' } })
+    fireEvent.change(screen.getByLabelText('Skip bet after (losses)'), { target: { value: '2' } })
+    fireEvent.click(screen.getByText('Start Analysis'))
+
+    expect(screen.getByText('1 hands skipped')).toBeInTheDocument()
+    expect(container.querySelectorAll('.big-road__cell--skipped')).toHaveLength(1)
+  })
+
+  it('treats a blank Skip bet after as disabled', () => {
+    const history: HandHistoryEntry[] = [entry('banker'), entry('banker'), entry('banker')]
+    render(<AnalyzePanel history={history} />)
+    fireEvent.change(screen.getByLabelText('Spot'), { target: { value: 'player' } })
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '1,2,3,4' } })
+    fireEvent.click(screen.getByText('Start Analysis'))
+
+    expect(screen.getByText('0 hands skipped')).toBeInTheDocument()
+  })
+
+  it('shows an error when Skip bet after is not a positive integer', () => {
+    render(<AnalyzePanel history={[entry('banker')]} />)
+    fireEvent.change(screen.getByLabelText('Skip bet after (losses)'), { target: { value: 'abc' } })
+    fireEvent.click(screen.getByText('Start Analysis'))
+
+    expect(screen.getByTestId('analyze-error')).toBeInTheDocument()
+    expect(screen.queryByTestId('analyze-results')).not.toBeInTheDocument()
+  })
 })
