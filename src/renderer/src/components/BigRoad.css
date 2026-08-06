@@ -68,3 +68,7 @@
 .big-road__cell--skipped .big-road__circle {
   opacity: 0.35;
 }
+
+.big-road__cell--peak .big-road__circle {
+  box-shadow: 0 0 0 2px #8e44ad;
+}

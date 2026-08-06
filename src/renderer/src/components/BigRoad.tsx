@@ -8,14 +8,15 @@ interface BigRoadProps {
   history: HandHistoryEntry[]
   highlightIndices?: Set<number>
   skippedIndices?: Set<number>
+  peakIndex?: number | null
 }
 
-export function BigRoad({ history, highlightIndices, skippedIndices }: BigRoadProps) {
+export function BigRoad({ history, highlightIndices, skippedIndices, peakIndex }: BigRoadProps) {
   const grid = buildBigRoad(history)
   const columnCount = Math.max(grid.length, MIN_COLUMNS)
 
   const positions =
-    highlightIndices || skippedIndices ? getBigRoadPositions(history) : null
+    highlightIndices || skippedIndices || peakIndex != null ? getBigRoadPositions(history) : null
 
   const highlightedCells = new Set<string>()
   if (highlightIndices && positions) {
@@ -33,17 +34,25 @@ export function BigRoad({ history, highlightIndices, skippedIndices }: BigRoadPr
     }
   }
 
+  let peakCell: string | null = null
+  if (peakIndex != null && positions) {
+    const position = positions[peakIndex]
+    if (position) peakCell = `${position.col}-${position.row}`
+  }
+
   const cells = Array.from({ length: columnCount }, (_, colIndex) =>
     Array.from({ length: ROWS }, (_, rowIndex) => {
       const cell = grid[colIndex]?.[rowIndex] ?? null
       const key = `${colIndex}-${rowIndex}`
       const isHighlighted = highlightedCells.has(key)
       const isSkipped = skippedCells.has(key)
+      const isPeak = key === peakCell
       const classNames = [
         'big-road__cell',
         cell ? `big-road__cell--${cell.outcome}` : '',
         isHighlighted ? 'big-road__cell--highlight' : '',
-        isSkipped ? 'big-road__cell--skipped' : ''
+        isSkipped ? 'big-road__cell--skipped' : '',
+        isPeak ? 'big-road__cell--peak' : ''
       ]
         .filter(Boolean)
         .join(' ')

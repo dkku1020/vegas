@@ -107,4 +107,32 @@ describe('BigRoad', () => {
     expect(container.querySelectorAll('.big-road__cell--skipped')).toHaveLength(2)
     expect(container.querySelectorAll('.big-road__cell--highlight')).toHaveLength(1)
   })
+
+  it('marks the cell for a given peak index', () => {
+    const { container } = render(
+      <BigRoad history={[entry('player'), entry('banker')]} peakIndex={1} />
+    )
+    const peak = container.querySelectorAll('.big-road__cell--peak')
+    expect(peak).toHaveLength(1)
+    expect(peak[0].classList.contains('big-road__cell--banker')).toBe(true)
+  })
+
+  it('marks nothing when peakIndex is null or omitted', () => {
+    const { container } = render(<BigRoad history={[entry('player')]} peakIndex={null} />)
+    expect(container.querySelectorAll('.big-road__cell--peak')).toHaveLength(0)
+  })
+
+  it('marks the peak cell independently of highlighted and skipped cells', () => {
+    const { container } = render(
+      <BigRoad
+        history={[entry('player'), entry('banker'), entry('player')]}
+        highlightIndices={new Set([0])}
+        skippedIndices={new Set([2])}
+        peakIndex={1}
+      />
+    )
+    expect(container.querySelectorAll('.big-road__cell--peak')).toHaveLength(1)
+    expect(container.querySelectorAll('.big-road__cell--highlight')).toHaveLength(1)
+    expect(container.querySelectorAll('.big-road__cell--skipped')).toHaveLength(1)
+  })
 })
