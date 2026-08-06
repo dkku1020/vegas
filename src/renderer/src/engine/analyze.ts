@@ -19,9 +19,10 @@ export function analyzeLabouchereCompletions(
   spotMode: LabouchereSpotMode,
   sequence: number[],
   unit: number,
-  skipAfter?: number
+  skipAfter?: number,
+  noNewSequenceAfter?: number
 ): AnalyzeLabouchereResult {
-  const strategy = labouchere(spotMode, sequence, unit, skipAfter)
+  const strategy = labouchere(spotMode, sequence, unit, skipAfter, noNewSequenceAfter)
   const initialSequence = [...sequence]
 
   const completions: number[] = []
@@ -43,7 +44,11 @@ export function analyzeLabouchereCompletions(
       spotMode === 'banker' ||
       sessionHistory.some((r) => r.outcome !== 'tie')
 
-    if (skipAfter !== undefined && totalWagered === 0 && hasResolvableSpot) {
+    if (
+      (skipAfter !== undefined || noNewSequenceAfter !== undefined) &&
+      totalWagered === 0 &&
+      hasResolvableSpot
+    ) {
       skipped.push(i)
     }
 
@@ -57,7 +62,9 @@ export function analyzeLabouchereCompletions(
 
     const remaining = deriveLabouchereSequence(initialSequence, unit, sessionHistory)
     if (remaining.length === 0) {
-      completions.push(i)
+      if (totalWagered > 0) {
+        completions.push(i)
+      }
     } else {
       const currentMax = Math.max(...remaining)
       if (currentMax > peakNumber) {

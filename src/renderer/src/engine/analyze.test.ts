@@ -117,4 +117,19 @@ describe('analyzeLabouchereCompletions', () => {
     expect(result.peakNumber).toBe(5)
     expect(result.peakIndex).toBe(0)
   })
+
+  it('reports safety-net sit-outs as skipped even when skip-after is not set, without inflating completions', () => {
+    const history = [entry('banker'), entry('banker'), entry('player')]
+    const result = analyzeLabouchereCompletions(history, 'banker', [3], 5, undefined, 1)
+    // Hand 0: fresh [3], bets banker, wins — completes the sequence (completions: [0]).
+    // Hand 1: derived sequence is now empty; shoeHistory.length (1) meets the threshold (1),
+    // so the safety net blocks a fresh restart — a zero-wager sit-out, reported as skipped.
+    // Hand 2: still empty (the sit-out didn't touch it), shoeHistory.length (2) still meets
+    // the threshold — another sit-out, also skipped.
+    // Without the completions fix below, hands 1 and 2 would ALSO be double-counted as
+    // completions, since the derived sequence merely stayed empty rather than being newly
+    // completed by either of them.
+    expect(result.skipped).toEqual([1, 2])
+    expect(result.completions).toEqual([0])
+  })
 })
