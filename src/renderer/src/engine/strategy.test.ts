@@ -200,4 +200,105 @@ describe('labouchere', () => {
   it('throws when unit is not positive', () => {
     expect(() => labouchere('banker', [1, 2], 0)).toThrow()
   })
+
+  it('skips the bet after N consecutive losses on a fixed spot', () => {
+    const strategy = labouchere('player', [1, 2, 3, 4], 5, 2)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 },
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 }
+      ],
+      sessionHistory: []
+    }
+    expect(strategy(context)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
+  it('keeps betting while the loss streak is below the skip-after threshold', () => {
+    const strategy = labouchere('player', [1, 2, 3, 4], 5, 3)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 },
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 }
+      ],
+      sessionHistory: []
+    }
+    expect(strategy(context).player).toBeGreaterThan(0)
+  })
+
+  it('does not count ties toward the skip-after loss streak', () => {
+    const strategy = labouchere('player', [1, 2, 3, 4], 5, 2)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 },
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'tie', netChange: 0 },
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 }
+      ],
+      sessionHistory: []
+    }
+    expect(strategy(context)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
+  it('keeps sitting out through a tie while the loss streak is active', () => {
+    const strategy = labouchere('player', [1, 2, 3, 4], 5, 2)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 },
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 },
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'tie', netChange: 0 }
+      ],
+      sessionHistory: []
+    }
+    expect(strategy(context)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
+  it('resumes betting the hand after the spot wins outright', () => {
+    const strategy = labouchere('player', [1, 2, 3, 4], 5, 2)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 },
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 },
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'player', netChange: 0 }
+      ],
+      sessionHistory: []
+    }
+    expect(strategy(context).player).toBeGreaterThan(0)
+  })
+
+  it('resets the loss streak at the start of a new shoe', () => {
+    const strategy = labouchere('player', [1, 2, 3, 4], 5, 2)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [],
+      sessionHistory: [
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 },
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 }
+      ]
+    }
+    expect(strategy(context).player).toBeGreaterThan(0)
+  })
+
+  it('throws when skip-after is combined with a follow spot', () => {
+    expect(() => labouchere('follow', [1, 2], 5, 2)).toThrow()
+  })
+
+  it('throws when skip-after is combined with a counter spot', () => {
+    expect(() => labouchere('counter', [1, 2], 5, 2)).toThrow()
+  })
+
+  it('throws when skip-after is zero', () => {
+    expect(() => labouchere('player', [1, 2], 5, 0)).toThrow()
+  })
+
+  it('throws when skip-after is negative', () => {
+    expect(() => labouchere('player', [1, 2], 5, -1)).toThrow()
+  })
+
+  it('throws when skip-after is not an integer', () => {
+    expect(() => labouchere('player', [1, 2], 5, 1.5)).toThrow()
+  })
 })
