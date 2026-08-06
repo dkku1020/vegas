@@ -132,4 +132,16 @@ describe('analyzeLabouchereCompletions', () => {
     expect(result.skipped).toEqual([1, 2])
     expect(result.completions).toEqual([0])
   })
+
+  it('reports safety-net sit-outs as skipped for a follow spot', () => {
+    // hand 0: spot undetermined (no decisive predecessor yet), zero wager, NOT skipped
+    // hand 1: follow predicts banker (from hand 0's outcome); bets banker, wins — [3]
+    //   collapses to empty, completing the sequence
+    // hand 2: derived sequence is still empty; shoeHistory.length (2) >= threshold (2) —
+    //   the safety net blocks a fresh restart, a zero-wager sit-out, reported as skipped
+    const history = [entry('banker'), entry('banker'), entry('player')]
+    const result = analyzeLabouchereCompletions(history, 'follow', [3], 5, undefined, 2)
+    expect(result.completions).toEqual([1])
+    expect(result.skipped).toEqual([2])
+  })
 })

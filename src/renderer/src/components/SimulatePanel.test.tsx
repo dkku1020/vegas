@@ -156,6 +156,7 @@ describe('SimulatePanel', () => {
   it('shows the No new sequence after field for Labouchere regardless of spot', () => {
     render(<SimulatePanel />)
     fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    fireEvent.change(screen.getByLabelText('Spot'), { target: { value: 'follow' } })
     expect(screen.getByLabelText('No new sequence after (hands)')).toBeInTheDocument()
   })
 
