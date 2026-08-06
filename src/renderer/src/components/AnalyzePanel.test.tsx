@@ -86,6 +86,23 @@ describe('AnalyzePanel', () => {
     expect(container.querySelectorAll('.big-road__cell--skipped')).toHaveLength(1)
   })
 
+  it('excludes tie hands from the skipped count so it matches the dimmed cells shown', () => {
+    const history: HandHistoryEntry[] = [
+      entry('banker'),
+      entry('banker'),
+      entry('tie'),
+      entry('banker')
+    ]
+    const { container } = render(<AnalyzePanel history={history} />)
+    fireEvent.change(screen.getByLabelText('Spot'), { target: { value: 'player' } })
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '1,2,3,4' } })
+    fireEvent.change(screen.getByLabelText('Skip bet after (losses)'), { target: { value: '2' } })
+    fireEvent.click(screen.getByText('Start Analysis'))
+
+    expect(screen.getByText('1 hands skipped')).toBeInTheDocument()
+    expect(container.querySelectorAll('.big-road__cell--skipped')).toHaveLength(1)
+  })
+
   it('treats a blank Skip bet after as disabled', () => {
     const history: HandHistoryEntry[] = [entry('banker'), entry('banker'), entry('banker')]
     render(<AnalyzePanel history={history} />)

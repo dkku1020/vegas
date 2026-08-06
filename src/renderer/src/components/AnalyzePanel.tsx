@@ -132,7 +132,7 @@ export function AnalyzePanel({ history }: AnalyzePanelProps) {
       {completions && (
         <div className="analyze-panel__results" data-testid="analyze-results">
           <div>Sequence completed {completions.length} times</div>
-          <div>{skipped.length} hands skipped</div>
+          <div>{skipped.filter((i) => history[i].outcome !== 'tie').length} hands skipped</div>
           <BigRoad
             history={history}
             highlightIndices={new Set(completions)}
