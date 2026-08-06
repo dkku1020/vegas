@@ -81,4 +81,12 @@ describe('analyzeLabouchereCompletions', () => {
     expect(result.peakNumber).toBe(11)
     expect(result.peakIndex).toBe(1)
   })
+
+  it('keeps tracking the peak correctly when Skip Bet After is also active', () => {
+    const history = [entry('banker'), entry('banker'), entry('banker')]
+    const result = analyzeLabouchereCompletions(history, 'player', [1, 2, 3, 4], 5, 1)
+    expect(result.skipped).toEqual([1, 2])
+    expect(result.peakNumber).toBe(5)
+    expect(result.peakIndex).toBe(0)
+  })
 })

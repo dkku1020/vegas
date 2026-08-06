@@ -70,5 +70,5 @@
 }
 
 .big-road__cell--peak .big-road__circle {
-  box-shadow: 0 0 0 2px #8e44ad;
+  box-shadow: 0 0 0 1px #f5f1e6, 0 0 0 3px #8e44ad;
 }

@@ -210,7 +210,7 @@ export function SimulatePanel() {
           {avgPeak !== null && maxPeak !== null && (
             <>
               <div>Avg peak sequence number: {avgPeak.toFixed(1)}</div>
-              <div>Highest peak seen: {maxPeak}</div>
+              <div>Highest peak seen: {Number(maxPeak.toFixed(2))}</div>
             </>
           )}
         </div>

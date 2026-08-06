@@ -89,7 +89,7 @@ export function simulateSession(config: SimulateSessionConfig): SimSessionResult
     busted = true
   }
 
-  onSessionComplete?.(sessionHistory)
+  onSessionComplete?.([...sessionHistory])
 
   return {
     finalBankroll: bankroll,

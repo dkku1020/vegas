@@ -135,4 +135,19 @@ describe('BigRoad', () => {
     expect(container.querySelectorAll('.big-road__cell--highlight')).toHaveLength(1)
     expect(container.querySelectorAll('.big-road__cell--skipped')).toHaveLength(1)
   })
+
+  it('applies peak, highlight, and skipped classes to the same cell when the indices coincide', () => {
+    const { container } = render(
+      <BigRoad
+        history={[entry('player'), entry('banker')]}
+        highlightIndices={new Set([1])}
+        skippedIndices={new Set([1])}
+        peakIndex={1}
+      />
+    )
+    const cell = container.querySelector('.big-road__cell--peak')
+    expect(cell).not.toBeNull()
+    expect(cell?.classList.contains('big-road__cell--highlight')).toBe(true)
+    expect(cell?.classList.contains('big-road__cell--skipped')).toBe(true)
+  })
 })
