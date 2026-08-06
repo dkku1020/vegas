@@ -60,4 +60,25 @@ describe('analyzeLabouchereCompletions', () => {
   it('throws when skip-after is combined with a follow spot, mirroring labouchere() validation', () => {
     expect(() => analyzeLabouchereCompletions([], 'follow', [1, 2], 5, 2)).toThrow()
   })
+
+  it('reports the starting sequence max as the peak when it is never exceeded', () => {
+    const history = [entry('banker')]
+    const result = analyzeLabouchereCompletions(history, 'banker', [3, 4], 5)
+    expect(result.peakNumber).toBe(4)
+    expect(result.peakIndex).toBeNull()
+  })
+
+  it('reports the peak number and the hand index where it was first reached', () => {
+    const history = [entry('player')]
+    const result = analyzeLabouchereCompletions(history, 'banker', [1, 2, 3, 4], 5)
+    expect(result.peakNumber).toBe(5)
+    expect(result.peakIndex).toBe(0)
+  })
+
+  it('does not move the peak index when a later sequence state does not exceed the current peak', () => {
+    const history = [entry('player'), entry('banker'), entry('player')]
+    const result = analyzeLabouchereCompletions(history, 'player', [1, 10], 1)
+    expect(result.peakNumber).toBe(11)
+    expect(result.peakIndex).toBe(1)
+  })
 })

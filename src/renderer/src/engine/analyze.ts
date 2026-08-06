@@ -10,6 +10,8 @@ import { computeSettlement } from './payouts'
 export interface AnalyzeLabouchereResult {
   completions: number[]
   skipped: number[]
+  peakNumber: number
+  peakIndex: number | null
 }
 
 export function analyzeLabouchereCompletions(
@@ -25,6 +27,8 @@ export function analyzeLabouchereCompletions(
   const completions: number[] = []
   const skipped: number[] = []
   const sessionHistory: SimHandRecord[] = []
+  let peakNumber = Math.max(...initialSequence)
+  let peakIndex: number | null = null
 
   for (let i = 0; i < history.length; i++) {
     const bets: Bets = strategy({
@@ -52,8 +56,14 @@ export function analyzeLabouchereCompletions(
     const remaining = deriveLabouchereSequence(initialSequence, unit, sessionHistory)
     if (remaining.length === 0) {
       completions.push(i)
+    } else {
+      const currentMax = Math.max(...remaining)
+      if (currentMax > peakNumber) {
+        peakNumber = currentMax
+        peakIndex = i
+      }
     }
   }
 
-  return { completions, skipped }
+  return { completions, skipped, peakNumber, peakIndex }
 }
