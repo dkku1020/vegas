@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { BetSpot } from '@shared/types'
-import { flatBet, labouchere } from '../engine/strategy'
+import { flatBet, labouchere, computePeakSequenceNumber } from '../engine/strategy'
 import { runSimulation, type SimulationResult } from '../engine/simulate'
 import './SimulatePanel.css'
 
@@ -50,32 +50,54 @@ export function SimulatePanel() {
   const [shoesPerSession, setShoesPerSession] = useState('1')
   const [trials, setTrials] = useState('100')
   const [result, setResult] = useState<SimulationResult | null>(null)
+  const [avgPeak, setAvgPeak] = useState<number | null>(null)
+  const [maxPeak, setMaxPeak] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   function handleRun(): void {
     try {
-      const strategy =
-        strategyType === 'flat'
-          ? flatBet(spot, Number(amount))
-          : labouchere(
-              labouchereSpot,
-              parseSequence(sequence),
-              Number(unit),
-              labouchereSpot === 'player' || labouchereSpot === 'banker'
-                ? parseSkipAfter(skipAfter)
-                : undefined
-            )
-      const next = runSimulation({
-        strategy,
-        startingBankroll: Number(startingBankroll),
-        shoesPerSession: Number(shoesPerSession),
-        trials: Number(trials)
-      })
-      setResult(next)
+      if (strategyType === 'flat') {
+        const strategy = flatBet(spot, Number(amount))
+        const next = runSimulation({
+          strategy,
+          startingBankroll: Number(startingBankroll),
+          shoesPerSession: Number(shoesPerSession),
+          trials: Number(trials)
+        })
+        setResult(next)
+        setAvgPeak(null)
+        setMaxPeak(null)
+      } else {
+        const parsedSequence = parseSequence(sequence)
+        const parsedUnit = Number(unit)
+        const strategy = labouchere(
+          labouchereSpot,
+          parsedSequence,
+          parsedUnit,
+          labouchereSpot === 'player' || labouchereSpot === 'banker'
+            ? parseSkipAfter(skipAfter)
+            : undefined
+        )
+        const peaks: number[] = []
+        const next = runSimulation({
+          strategy,
+          startingBankroll: Number(startingBankroll),
+          shoesPerSession: Number(shoesPerSession),
+          trials: Number(trials),
+          onSessionComplete: (sessionHistory) => {
+            peaks.push(computePeakSequenceNumber(parsedSequence, parsedUnit, sessionHistory))
+          }
+        })
+        setResult(next)
+        setAvgPeak(peaks.reduce((a, b) => a + b, 0) / peaks.length)
+        setMaxPeak(Math.max(...peaks))
+      }
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Simulation failed.')
       setResult(null)
+      setAvgPeak(null)
+      setMaxPeak(null)
     }
   }
 
@@ -185,6 +207,12 @@ export function SimulatePanel() {
           <div>Best trial: ${result.summary.bestNetProfit.toFixed(2)}</div>
           <div>Worst trial: ${result.summary.worstNetProfit.toFixed(2)}</div>
           <div>Avg hands played: {result.summary.avgHandsPlayed.toFixed(1)}</div>
+          {avgPeak !== null && maxPeak !== null && (
+            <>
+              <div>Avg peak sequence number: {avgPeak.toFixed(1)}</div>
+              <div>Highest peak seen: {maxPeak}</div>
+            </>
+          )}
         </div>
       )}
     </div>
