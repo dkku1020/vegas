@@ -26,6 +26,16 @@ function parseSequence(text: string): number[] {
   return numbers
 }
 
+function parseSkipAfter(text: string): number | undefined {
+  const trimmed = text.trim()
+  if (trimmed.length === 0) return undefined
+  const value = Number(trimmed)
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`Skip bet after must be a positive integer, got "${text}"`)
+  }
+  return value
+}
+
 export function SimulatePanel() {
   const [strategyType, setStrategyType] = useState<StrategyType>('flat')
   const [spot, setSpot] = useState<BetSpot>('banker')
@@ -35,6 +45,7 @@ export function SimulatePanel() {
   )
   const [sequence, setSequence] = useState('1,2,3,4')
   const [unit, setUnit] = useState('5')
+  const [skipAfter, setSkipAfter] = useState('')
   const [startingBankroll, setStartingBankroll] = useState('1000')
   const [shoesPerSession, setShoesPerSession] = useState('1')
   const [trials, setTrials] = useState('100')
@@ -46,7 +57,14 @@ export function SimulatePanel() {
       const strategy =
         strategyType === 'flat'
           ? flatBet(spot, Number(amount))
-          : labouchere(labouchereSpot, parseSequence(sequence), Number(unit))
+          : labouchere(
+              labouchereSpot,
+              parseSequence(sequence),
+              Number(unit),
+              labouchereSpot === 'player' || labouchereSpot === 'banker'
+                ? parseSkipAfter(skipAfter)
+                : undefined
+            )
       const next = runSimulation({
         strategy,
         startingBankroll: Number(startingBankroll),
@@ -108,6 +126,17 @@ export function SimulatePanel() {
                 ))}
               </select>
             </label>
+            {(labouchereSpot === 'player' || labouchereSpot === 'banker') && (
+              <label>
+                Skip bet after (losses)
+                <input
+                  type="text"
+                  value={skipAfter}
+                  onChange={(e) => setSkipAfter(e.target.value)}
+                  placeholder="e.g. 4"
+                />
+              </label>
+            )}
             <label>
               Sequence
               <input type="text" value={sequence} onChange={(e) => setSequence(e.target.value)} />

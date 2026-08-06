@@ -75,4 +75,45 @@ describe('SimulatePanel', () => {
     expect(screen.getByTestId('simulate-error')).toBeInTheDocument()
     expect(screen.queryByTestId('simulate-results')).not.toBeInTheDocument()
   })
+
+  it('shows the Skip bet after field for a fixed Labouchere player/banker spot', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    expect(screen.getByLabelText('Skip bet after (losses)')).toBeInTheDocument()
+  })
+
+  it('hides the Skip bet after field for Flat Bet strategy', () => {
+    render(<SimulatePanel />)
+    expect(screen.queryByLabelText('Skip bet after (losses)')).not.toBeInTheDocument()
+  })
+
+  it('hides the Skip bet after field for follow/counter spots', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    fireEvent.change(screen.getByLabelText('Spot'), { target: { value: 'counter' } })
+    expect(screen.queryByLabelText('Skip bet after (losses)')).not.toBeInTheDocument()
+  })
+
+  it('runs a Labouchere simulation with skip bet after set', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '1,2' } })
+    fireEvent.change(screen.getByLabelText('Unit'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('Skip bet after (losses)'), { target: { value: '4' } })
+    fireEvent.change(screen.getByLabelText('Trials'), { target: { value: '5' } })
+    fireEvent.click(screen.getByText('Run'))
+
+    expect(screen.getByTestId('simulate-results')).toBeInTheDocument()
+    expect(screen.getByText('Trials: 5')).toBeInTheDocument()
+  })
+
+  it('shows an error when Skip bet after is not a positive integer', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    fireEvent.change(screen.getByLabelText('Skip bet after (losses)'), { target: { value: '-1' } })
+    fireEvent.click(screen.getByText('Run'))
+
+    expect(screen.getByTestId('simulate-error')).toBeInTheDocument()
+    expect(screen.queryByTestId('simulate-results')).not.toBeInTheDocument()
+  })
 })
