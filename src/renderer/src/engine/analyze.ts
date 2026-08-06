@@ -7,16 +7,23 @@ import {
 } from './strategy'
 import { computeSettlement } from './payouts'
 
+export interface AnalyzeLabouchereResult {
+  completions: number[]
+  skipped: number[]
+}
+
 export function analyzeLabouchereCompletions(
   history: HandHistoryEntry[],
   spotMode: LabouchereSpotMode,
   sequence: number[],
-  unit: number
-): number[] {
-  const strategy = labouchere(spotMode, sequence, unit)
+  unit: number,
+  skipAfter?: number
+): AnalyzeLabouchereResult {
+  const strategy = labouchere(spotMode, sequence, unit, skipAfter)
   const initialSequence = [...sequence]
 
   const completions: number[] = []
+  const skipped: number[] = []
   const sessionHistory: SimHandRecord[] = []
 
   for (let i = 0; i < history.length; i++) {
@@ -25,6 +32,15 @@ export function analyzeLabouchereCompletions(
       shoeHistory: sessionHistory,
       sessionHistory
     })
+
+    if (
+      skipAfter !== undefined &&
+      (spotMode === 'player' || spotMode === 'banker') &&
+      bets[spotMode] === 0
+    ) {
+      skipped.push(i)
+    }
+
     const settlement = computeSettlement(bets, history[i].outcome)
     const record: SimHandRecord = {
       bets,
@@ -39,5 +55,5 @@ export function analyzeLabouchereCompletions(
     }
   }
 
-  return completions
+  return { completions, skipped }
 }
