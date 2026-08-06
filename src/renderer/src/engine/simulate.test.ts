@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mulberry32 } from './rng'
 import { flatBet } from './strategy'
+import type { SimHandRecord } from './strategy'
 import { simulateSession, runSimulation } from './simulate'
 import { TABLE_MIN_BET, TABLE_MAX_BET } from '../state/gameReducer'
 
@@ -93,6 +94,19 @@ describe('simulateSession', () => {
     expect(twoShoes.shoesCompleted).toBe(2)
     expect(twoShoes.handsPlayed).toBeGreaterThan(oneShoe.handsPlayed)
   })
+
+  it('calls onSessionComplete once with the full session history', () => {
+    const histories: SimHandRecord[][] = []
+    const result = simulateSession({
+      strategy: flatBet('banker', 5),
+      startingBankroll: 1000,
+      shoesPerSession: 1,
+      randomFn: mulberry32(1),
+      onSessionComplete: (sessionHistory) => histories.push(sessionHistory)
+    })
+    expect(histories).toHaveLength(1)
+    expect(histories[0]).toHaveLength(result.handsPlayed)
+  })
 })
 
 describe('runSimulation', () => {
@@ -169,5 +183,20 @@ describe('runSimulation', () => {
         seed: 1
       })
     ).toThrow()
+  })
+
+  it('calls onSessionComplete once per trial', () => {
+    let callCount = 0
+    runSimulation({
+      strategy: flatBet('banker', 0),
+      startingBankroll: 1000,
+      shoesPerSession: 1,
+      trials: 3,
+      seed: 1,
+      onSessionComplete: () => {
+        callCount += 1
+      }
+    })
+    expect(callCount).toBe(3)
   })
 })

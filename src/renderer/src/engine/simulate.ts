@@ -19,6 +19,7 @@ export interface SimulateSessionConfig {
   startingBankroll: number
   shoesPerSession: number
   randomFn: () => number
+  onSessionComplete?: (sessionHistory: SimHandRecord[]) => void
 }
 
 function validateBetShape(bets: Bets): void {
@@ -35,7 +36,7 @@ function validateBetShape(bets: Bets): void {
 }
 
 export function simulateSession(config: SimulateSessionConfig): SimSessionResult {
-  const { strategy, startingBankroll, shoesPerSession, randomFn } = config
+  const { strategy, startingBankroll, shoesPerSession, randomFn, onSessionComplete } = config
 
   let bankroll = startingBankroll
   let shoe: Shoe = createShoe(randomFn)
@@ -88,6 +89,8 @@ export function simulateSession(config: SimulateSessionConfig): SimSessionResult
     busted = true
   }
 
+  onSessionComplete?.(sessionHistory)
+
   return {
     finalBankroll: bankroll,
     netProfit: bankroll - startingBankroll,
@@ -118,6 +121,7 @@ export interface RunSimulationConfig {
   shoesPerSession: number
   trials: number
   seed?: number
+  onSessionComplete?: (sessionHistory: SimHandRecord[]) => void
 }
 
 function median(values: number[]): number {
@@ -127,7 +131,7 @@ function median(values: number[]): number {
 }
 
 export function runSimulation(config: RunSimulationConfig): SimulationResult {
-  const { strategy, startingBankroll, shoesPerSession, trials, seed } = config
+  const { strategy, startingBankroll, shoesPerSession, trials, seed, onSessionComplete } = config
 
   if (trials < 1) {
     throw new Error(`runSimulation requires trials >= 1, got ${trials}`)
@@ -142,7 +146,8 @@ export function runSimulation(config: RunSimulationConfig): SimulationResult {
         strategy,
         startingBankroll,
         shoesPerSession,
-        randomFn: mulberry32(baseSeed + i)
+        randomFn: mulberry32(baseSeed + i),
+        onSessionComplete
       })
     )
   }
