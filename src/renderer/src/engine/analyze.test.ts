@@ -57,8 +57,28 @@ describe('analyzeLabouchereCompletions', () => {
     expect(result.skipped).toEqual([])
   })
 
-  it('throws when skip-after is combined with a follow spot, mirroring labouchere() validation', () => {
-    expect(() => analyzeLabouchereCompletions([], 'follow', [1, 2], 5, 2)).toThrow()
+  it('no longer throws when skip-after is combined with a follow spot', () => {
+    expect(() => analyzeLabouchereCompletions([], 'follow', [1, 2], 5, 2)).not.toThrow()
+  })
+
+  it('reports skipped hands for a follow spot loss streak, ignoring the undetermined first hand', () => {
+    // Hand 0 (banker): shoeHistory is empty — no decisive predecessor, spot is undetermined,
+    // not counted as a skip.
+    // Hand 1 (player): shoeHistory=[banker], only 1 decisive record — countDynamicLossStreak
+    // needs a predecessor-of-a-predecessor to find any loss, so streak=0. Bets banker for
+    // real (loses to the actual 'player' outcome, but that's just a normal loss, not a skip).
+    // Hand 2 (banker): shoeHistory=[banker, player] — follow would have predicted banker
+    // (from hand 0) for hand 1, but hand 1 was player: that's 1 dynamic loss. skipAfter=1
+    // means this hand sits out.
+    const history = [entry('banker'), entry('player'), entry('banker')]
+    const result = analyzeLabouchereCompletions(history, 'follow', [1, 2, 3, 4], 5, 1)
+    expect(result.skipped).toEqual([2])
+  })
+
+  it('does not report the undetermined first hand of a shoe as skipped for follow', () => {
+    const history = [entry('banker')]
+    const result = analyzeLabouchereCompletions(history, 'follow', [1, 2, 3, 4], 5, 1)
+    expect(result.skipped).toEqual([])
   })
 
   it('reports the starting sequence max as the peak when it is never exceeded', () => {

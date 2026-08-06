@@ -37,11 +37,13 @@ export function analyzeLabouchereCompletions(
       sessionHistory
     })
 
-    if (
-      skipAfter !== undefined &&
-      (spotMode === 'player' || spotMode === 'banker') &&
-      bets[spotMode] === 0
-    ) {
+    const totalWagered = bets.player + bets.banker + bets.tie
+    const hasResolvableSpot =
+      spotMode === 'player' ||
+      spotMode === 'banker' ||
+      sessionHistory.some((r) => r.outcome !== 'tie')
+
+    if (skipAfter !== undefined && totalWagered === 0 && hasResolvableSpot) {
       skipped.push(i)
     }
 
