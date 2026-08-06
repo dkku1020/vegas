@@ -283,12 +283,108 @@ describe('labouchere', () => {
     expect(strategy(context).player).toBeGreaterThan(0)
   })
 
-  it('throws when skip-after is combined with a follow spot', () => {
-    expect(() => labouchere('follow', [1, 2], 5, 2)).toThrow()
+  it('no longer throws when skip-after is combined with a follow spot', () => {
+    expect(() => labouchere('follow', [1, 2], 5, 2)).not.toThrow()
   })
 
-  it('throws when skip-after is combined with a counter spot', () => {
-    expect(() => labouchere('counter', [1, 2], 5, 2)).toThrow()
+  it('no longer throws when skip-after is combined with a counter spot', () => {
+    expect(() => labouchere('counter', [1, 2], 5, 2)).not.toThrow()
+  })
+
+  it('skips the bet after N consecutive dynamic losses for follow', () => {
+    // Walking the shoe: after hand0(banker), follow predicts banker for hand1 — hand1 is
+    // player, a loss. After hand1(player), follow predicts player for hand2 — hand2 is
+    // banker, a loss. Two dynamic losses in a row, so the next bet (hand4) sits out.
+    const strategy = labouchere('follow', [1, 2, 3, 4], 5, 2)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'banker', netChange: 0 },
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'player', netChange: -25 },
+        { bets: { player: 0, banker: 25, tie: 0 }, outcome: 'banker', netChange: -25 }
+      ],
+      sessionHistory: []
+    }
+    expect(strategy(context)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
+  it('keeps betting while the follow dynamic loss streak is below the threshold', () => {
+    const strategy = labouchere('follow', [1, 2, 3, 4], 5, 3)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'banker', netChange: 0 },
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'player', netChange: -25 },
+        { bets: { player: 0, banker: 25, tie: 0 }, outcome: 'banker', netChange: -25 }
+      ],
+      sessionHistory: []
+    }
+    // Same history as above but skip-after is 3, so the 2-loss streak isn't enough to sit
+    // out yet. The resolved spot for the next hand is 'banker' (the last decisive outcome).
+    expect(strategy(context).banker).toBeGreaterThan(0)
+  })
+
+  it('skips the bet after N consecutive dynamic losses for counter', () => {
+    // Counter predicts the opposite of the previous decisive outcome. After hand0(banker),
+    // counter predicts player for hand1 — hand1 is banker, a loss. After hand1(banker),
+    // counter predicts player for hand2 — hand2 is banker, a loss. Two in a row → sit out.
+    const strategy = labouchere('counter', [1, 2, 3, 4], 5, 2)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'banker', netChange: 0 },
+        { bets: { player: 0, banker: 25, tie: 0 }, outcome: 'banker', netChange: -25 },
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 }
+      ],
+      sessionHistory: []
+    }
+    expect(strategy(context)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
+  it('does not count ties toward the follow dynamic loss streak', () => {
+    const strategy = labouchere('follow', [1, 2, 3, 4], 5, 2)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'banker', netChange: 0 },
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'player', netChange: -25 },
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'tie', netChange: 0 },
+        { bets: { player: 0, banker: 25, tie: 0 }, outcome: 'banker', netChange: -25 }
+      ],
+      sessionHistory: []
+    }
+    expect(strategy(context)).toEqual({ player: 0, banker: 0, tie: 0 })
+  })
+
+  it('resumes follow betting the hand after the dynamic pick wins outright', () => {
+    const strategy = labouchere('follow', [1, 2, 3, 4], 5, 2)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'banker', netChange: 0 },
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'player', netChange: -25 },
+        { bets: { player: 0, banker: 25, tie: 0 }, outcome: 'banker', netChange: -25 },
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'banker', netChange: 0 }
+      ],
+      sessionHistory: []
+    }
+    // Hand 4 (index 3): predicted = outcome of hand 3 = banker; actual = banker → win.
+    // So the streak resets to 0 and hand 5 (about to be bet) bets normally.
+    expect(strategy(context).banker).toBeGreaterThan(0)
+  })
+
+  it('resets the follow dynamic loss streak at the start of a new shoe', () => {
+    const strategy = labouchere('follow', [1, 2, 3, 4], 5, 2)
+    const context: StrategyContext = {
+      bankroll: 1000,
+      shoeHistory: [],
+      sessionHistory: [
+        { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'banker', netChange: 0 },
+        { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'player', netChange: -25 },
+        { bets: { player: 0, banker: 25, tie: 0 }, outcome: 'banker', netChange: -25 }
+      ]
+    }
+    expect(strategy(context)).toEqual({ player: 0, banker: 0, tie: 0 })
   })
 
   it('throws when skip-after is zero', () => {

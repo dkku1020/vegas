@@ -69,6 +69,17 @@ function countLossStreak(spot: BetSpot, shoeHistory: SimHandRecord[]): number {
   return streak
 }
 
+function countDynamicLossStreak(mode: 'follow' | 'counter', shoeHistory: SimHandRecord[]): number {
+  const decisive = shoeHistory.map((r) => r.outcome).filter((o) => o !== 'tie')
+  let streak = 0
+  for (let i = decisive.length - 1; i >= 1; i--) {
+    const predicted = mode === 'follow' ? decisive[i - 1] : decisive[i - 1] === 'player' ? 'banker' : 'player'
+    if (decisive[i] === predicted) break
+    streak += 1
+  }
+  return streak
+}
+
 export function labouchere(
   spotMode: LabouchereSpotMode,
   sequence: number[],
@@ -90,11 +101,6 @@ export function labouchere(
     throw new Error(`Labouchere requires a positive unit, got ${unit}`)
   }
   if (skipAfter !== undefined) {
-    if (spotMode === 'follow' || spotMode === 'counter') {
-      throw new Error(
-        `Skip-after is only valid for a fixed 'player' or 'banker' spot, got '${spotMode}'`
-      )
-    }
     if (!Number.isInteger(skipAfter) || skipAfter <= 0) {
       throw new Error(`Skip-after must be a positive integer, got ${skipAfter}`)
     }
@@ -118,8 +124,14 @@ export function labouchere(
       return bets
     }
 
-    if (skipAfter !== undefined && countLossStreak(spot, context.shoeHistory) >= skipAfter) {
-      return bets
+    if (skipAfter !== undefined) {
+      const streak =
+        spotMode === 'player' || spotMode === 'banker'
+          ? countLossStreak(spot, context.shoeHistory)
+          : countDynamicLossStreak(spotMode, context.shoeHistory)
+      if (streak >= skipAfter) {
+        return bets
+      }
     }
 
     const units = current.length === 1 ? current[0] : current[0] + current[current.length - 1]
