@@ -81,6 +81,14 @@ describe('analyzeLabouchereCompletions', () => {
     expect(result.skipped).toEqual([])
   })
 
+  it('does not report a leading-tie hand as skipped for follow', () => {
+    // sessionHistory=[tie] is non-empty but still has no decisive predecessor,
+    // so hand 1's zero wager is "spot undetermined", not a skip.
+    const history = [entry('tie'), entry('banker'), entry('player')]
+    const result = analyzeLabouchereCompletions(history, 'follow', [1, 2, 3, 4], 5, 1)
+    expect(result.skipped).toEqual([])
+  })
+
   it('reports the starting sequence max as the peak when it is never exceeded', () => {
     const history = [entry('banker')]
     const result = analyzeLabouchereCompletions(history, 'banker', [3, 4], 5)
