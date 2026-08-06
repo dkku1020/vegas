@@ -80,9 +80,15 @@ export default function App() {
             Analyze
           </button>
         </div>
-        {mode === 'play' && <PlayScreen onAnalyze={handleAnalyze} />}
-        {mode === 'simulate' && <SimulatePanel />}
-        {mode === 'analyze' && <AnalyzePanel history={analyzedHistory} />}
+        <div hidden={mode !== 'play'}>
+          <PlayScreen onAnalyze={handleAnalyze} />
+        </div>
+        <div hidden={mode !== 'simulate'}>
+          <SimulatePanel />
+        </div>
+        <div hidden={mode !== 'analyze'}>
+          <AnalyzePanel history={analyzedHistory} />
+        </div>
       </div>
     </GameProvider>
   )

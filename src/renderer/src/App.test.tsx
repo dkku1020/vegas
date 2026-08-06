@@ -102,12 +102,12 @@ describe('App', () => {
     await waitFor(() => expect(screen.getByTestId('table')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Simulate' }))
-    expect(screen.getByTestId('simulate-panel')).toBeInTheDocument()
-    expect(screen.queryByTestId('table')).not.toBeInTheDocument()
+    expect(screen.getByTestId('simulate-panel')).toBeVisible()
+    expect(screen.getByTestId('table')).not.toBeVisible()
 
     fireEvent.click(screen.getByRole('button', { name: 'Play' }))
-    expect(screen.getByTestId('table')).toBeInTheDocument()
-    expect(screen.queryByTestId('simulate-panel')).not.toBeInTheDocument()
+    expect(screen.getByTestId('table')).toBeVisible()
+    expect(screen.getByTestId('simulate-panel')).not.toBeVisible()
   })
 
   it('shows an empty state on the Analyze tab when no board has been sent yet', async () => {
@@ -116,8 +116,8 @@ describe('App', () => {
     await waitFor(() => expect(screen.getByTestId('table')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Analyze' }))
-    expect(screen.getByTestId('analyze-empty')).toBeInTheDocument()
-    expect(screen.queryByTestId('table')).not.toBeInTheDocument()
+    expect(screen.getByTestId('analyze-empty')).toBeVisible()
+    expect(screen.getByTestId('table')).not.toBeVisible()
   })
 
   it('sends the current board to the Analyze tab when Analyze Big Road is clicked', async () => {
@@ -136,17 +136,17 @@ describe('App', () => {
 
     fireEvent.click(screen.getByText('Analyze Big Road'))
 
-    expect(screen.getByTestId('analyze-panel')).toBeInTheDocument()
+    expect(screen.getByTestId('analyze-panel')).toBeVisible()
     expect(screen.queryByTestId('analyze-empty')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('table')).not.toBeInTheDocument()
+    expect(screen.getByTestId('table')).not.toBeVisible()
   })
 
-  it('keeps the Analyze tab snapshot frozen after playing another hand on the Play tab', async () => {
+  it('keeps the Analyze tab snapshot frozen and visible after playing another hand on the Play tab', async () => {
     // Force a deterministic, non-tie shoe so every hand produces a big-road cell.
     vi.spyOn(Math, 'random').mockReturnValue(0.01)
     vi.stubGlobal('AudioContext', FakeAudioContext)
     mockElectronAPI(1000)
-    const { container } = render(<App />)
+    render(<App />)
     await waitFor(() => expect(screen.getByTestId('table')).toBeInTheDocument())
 
     // Deal the first hand.
@@ -160,17 +160,17 @@ describe('App', () => {
     fireEvent.click(screen.getByText('Next Hand'))
     fireEvent.click(screen.getByText('Analyze Big Road'))
 
-    expect(screen.getByTestId('analyze-panel')).toBeInTheDocument()
-    // The Analyze tab only renders its big road once the analysis form is submitted.
+    const analyzePanel = screen.getByTestId('analyze-panel')
+    expect(analyzePanel).toBeVisible()
     fireEvent.click(screen.getByText('Start Analysis'))
-    const firstCellCount = container.querySelectorAll(
+    const firstCellCount = analyzePanel.querySelectorAll(
       '.big-road__cell--player, .big-road__cell--banker'
     ).length
     expect(firstCellCount).toBe(1)
 
-    // Go back to Play and deal a second hand without ever re-triggering the snapshot.
+    // Go back to Play and deal a second hand.
     fireEvent.click(screen.getByRole('button', { name: 'Play' }))
-    expect(screen.getByTestId('table')).toBeInTheDocument()
+    expect(screen.getByTestId('table')).toBeVisible()
 
     fireEvent.click(screen.getByTestId('chip-25'))
     fireEvent.click(screen.getByTestId('bet-spot-player'))
@@ -178,14 +178,12 @@ describe('App', () => {
     fireEvent.click(screen.getByText('Deal'))
     await waitFor(() => expect(screen.getByText('Next Hand')).toBeInTheDocument())
 
-    // Navigate to Analyze via the mode toggle only -- do NOT click "Analyze Big Road" again.
+    // Navigate back to Analyze via the mode toggle only -- the panel stays mounted, so its
+    // analysis results should still be showing without resubmitting the form.
     fireEvent.click(screen.getByRole('button', { name: 'Analyze' }))
 
-    expect(screen.getByTestId('analyze-panel')).toBeInTheDocument()
-    // The panel remounted, so its local analysis state is gone; submit the form again to reveal
-    // the board -- this does not re-snapshot the history, it only re-renders what's already frozen.
-    fireEvent.click(screen.getByText('Start Analysis'))
-    const secondCellCount = container.querySelectorAll(
+    expect(analyzePanel).toBeVisible()
+    const secondCellCount = analyzePanel.querySelectorAll(
       '.big-road__cell--player, .big-road__cell--banker'
     ).length
     expect(secondCellCount).toBe(firstCellCount)
