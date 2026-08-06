@@ -68,10 +68,23 @@ describe('AnalyzePanel', () => {
     expect(screen.getByLabelText('Skip bet after (losses)')).toBeInTheDocument()
   })
 
-  it('hides the Skip bet after field for follow/counter spots', () => {
+  it('shows the Skip bet after field for follow/counter spots', () => {
     render(<AnalyzePanel history={[entry('banker')]} />)
     fireEvent.change(screen.getByLabelText('Spot'), { target: { value: 'follow' } })
-    expect(screen.queryByLabelText('Skip bet after (losses)')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Skip bet after (losses)')).toBeInTheDocument()
+  })
+
+  it('runs an analysis with skip bet after set on a follow spot and shows dimmed cells', () => {
+    // Same history/math as the analyze.ts test above: only hand index 2 ends up skipped.
+    const history: HandHistoryEntry[] = [entry('banker'), entry('player'), entry('banker')]
+    const { container } = render(<AnalyzePanel history={history} />)
+    fireEvent.change(screen.getByLabelText('Spot'), { target: { value: 'follow' } })
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '1,2,3,4' } })
+    fireEvent.change(screen.getByLabelText('Skip bet after (losses)'), { target: { value: '1' } })
+    fireEvent.click(screen.getByText('Start Analysis'))
+
+    expect(screen.getByText('1 hands skipped')).toBeInTheDocument()
+    expect(container.querySelectorAll('.big-road__cell--skipped')).toHaveLength(1)
   })
 
   it('runs an analysis with skip bet after and shows the skipped count with dimmed cells', () => {

@@ -60,8 +60,7 @@ export function AnalyzePanel({ history }: AnalyzePanelProps) {
 
   function handleStartAnalysis(): void {
     try {
-      const parsedSkipAfter =
-        spot === 'player' || spot === 'banker' ? parseSkipAfter(skipAfter) : undefined
+      const parsedSkipAfter = parseSkipAfter(skipAfter)
       const result = analyzeLabouchereCompletions(
         history as HandHistoryEntry[],
         spot,
@@ -107,17 +106,15 @@ export function AnalyzePanel({ history }: AnalyzePanelProps) {
             ))}
           </select>
         </label>
-        {(spot === 'player' || spot === 'banker') && (
-          <label>
-            Skip bet after (losses)
-            <input
-              type="text"
-              value={skipAfter}
-              onChange={(e) => setSkipAfter(e.target.value)}
-              placeholder="e.g. 4"
-            />
-          </label>
-        )}
+        <label>
+          Skip bet after (losses)
+          <input
+            type="text"
+            value={skipAfter}
+            onChange={(e) => setSkipAfter(e.target.value)}
+            placeholder="e.g. 4"
+          />
+        </label>
         <label>
           Sequence
           <input type="text" value={sequence} onChange={(e) => setSequence(e.target.value)} />

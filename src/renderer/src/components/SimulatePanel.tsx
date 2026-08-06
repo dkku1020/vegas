@@ -74,9 +74,7 @@ export function SimulatePanel() {
           labouchereSpot,
           parsedSequence,
           parsedUnit,
-          labouchereSpot === 'player' || labouchereSpot === 'banker'
-            ? parseSkipAfter(skipAfter)
-            : undefined
+          parseSkipAfter(skipAfter)
         )
         const peaks: number[] = []
         const next = runSimulation({
@@ -148,17 +146,15 @@ export function SimulatePanel() {
                 ))}
               </select>
             </label>
-            {(labouchereSpot === 'player' || labouchereSpot === 'banker') && (
-              <label>
-                Skip bet after (losses)
-                <input
-                  type="text"
-                  value={skipAfter}
-                  onChange={(e) => setSkipAfter(e.target.value)}
-                  placeholder="e.g. 4"
-                />
-              </label>
-            )}
+            <label>
+              Skip bet after (losses)
+              <input
+                type="text"
+                value={skipAfter}
+                onChange={(e) => setSkipAfter(e.target.value)}
+                placeholder="e.g. 4"
+              />
+            </label>
             <label>
               Sequence
               <input type="text" value={sequence} onChange={(e) => setSequence(e.target.value)} />
