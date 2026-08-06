@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { flatBet, labouchere, computePeakSequenceNumber, type StrategyContext } from './strategy'
+import type { SimHandRecord } from './strategy'
 import { TABLE_MAX_BET } from '../state/gameReducer'
 
 const emptyContext: StrategyContext = { bankroll: 1000, shoeHistory: [], sessionHistory: [] }
