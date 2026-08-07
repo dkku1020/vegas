@@ -131,7 +131,7 @@ describe('SimulatePanel', () => {
     expect(screen.queryByTestId('simulate-results')).not.toBeInTheDocument()
   })
 
-  it('hides the peak sequence stats for Flat Bet strategy', () => {
+  it('hides the peak and final-completion stats for Flat Bet strategy', () => {
     render(<SimulatePanel />)
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } })
     fireEvent.change(screen.getByLabelText('Trials'), { target: { value: '5' } })
@@ -139,6 +139,7 @@ describe('SimulatePanel', () => {
 
     expect(screen.queryByText(/Avg peak sequence number/)).not.toBeInTheDocument()
     expect(screen.queryByText(/Highest peak seen/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/final sequence completed at hand/i)).not.toBeInTheDocument()
   })
 
   it('shows peak sequence stats for a Labouchere simulation', () => {
@@ -151,6 +152,20 @@ describe('SimulatePanel', () => {
 
     expect(screen.getByText(/Avg peak sequence number:/)).toBeInTheDocument()
     expect(screen.getByText(/Highest peak seen:/)).toBeInTheDocument()
+  })
+
+  it('shows the final-completion hand stats for a Labouchere simulation', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '1,2' } })
+    fireEvent.change(screen.getByLabelText('Unit'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('Trials'), { target: { value: '5' } })
+    fireEvent.click(screen.getByText('Run'))
+
+    // 5 trials of a full shoe with a short [1,2] sequence completes essentially every trial —
+    // same statistical-certainty pattern already relied on by the peak-stats test above.
+    expect(screen.getByText(/Avg final sequence completed at hand:/)).toBeInTheDocument()
+    expect(screen.getByText(/Latest final sequence completed at hand:/)).toBeInTheDocument()
   })
 
   it('shows the No new sequence after field for Labouchere regardless of spot', () => {

@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import type { BetSpot } from '@shared/types'
-import { flatBet, labouchere, computePeakSequenceNumber } from '../engine/strategy'
+import {
+  flatBet,
+  labouchere,
+  computePeakSequenceNumber,
+  computeLastCompletionIndex
+} from '../engine/strategy'
 import { runSimulation, type SimulationResult } from '../engine/simulate'
 import './SimulatePanel.css'
 
@@ -63,6 +68,8 @@ export function SimulatePanel() {
   const [result, setResult] = useState<SimulationResult | null>(null)
   const [avgPeak, setAvgPeak] = useState<number | null>(null)
   const [maxPeak, setMaxPeak] = useState<number | null>(null)
+  const [avgFinalCompletionHand, setAvgFinalCompletionHand] = useState<number | null>(null)
+  const [maxFinalCompletionHand, setMaxFinalCompletionHand] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   function handleRun(): void {
@@ -78,6 +85,8 @@ export function SimulatePanel() {
         setResult(next)
         setAvgPeak(null)
         setMaxPeak(null)
+        setAvgFinalCompletionHand(null)
+        setMaxFinalCompletionHand(null)
       } else {
         const parsedSequence = parseSequence(sequence)
         const parsedUnit = Number(unit)
@@ -89,6 +98,7 @@ export function SimulatePanel() {
           parseNoNewSequenceAfter(noNewSequenceAfter)
         )
         const peaks: number[] = []
+        const finalCompletionHands: number[] = []
         const next = runSimulation({
           strategy,
           startingBankroll: Number(startingBankroll),
@@ -96,11 +106,28 @@ export function SimulatePanel() {
           trials: Number(trials),
           onSessionComplete: (sessionHistory) => {
             peaks.push(computePeakSequenceNumber(parsedSequence, parsedUnit, sessionHistory))
+            const lastCompletionIndex = computeLastCompletionIndex(
+              parsedSequence,
+              parsedUnit,
+              sessionHistory
+            )
+            if (lastCompletionIndex !== null) {
+              finalCompletionHands.push(lastCompletionIndex + 1)
+            }
           }
         })
         setResult(next)
         setAvgPeak(peaks.reduce((a, b) => a + b, 0) / peaks.length)
         setMaxPeak(Math.max(...peaks))
+        if (finalCompletionHands.length > 0) {
+          setAvgFinalCompletionHand(
+            finalCompletionHands.reduce((a, b) => a + b, 0) / finalCompletionHands.length
+          )
+          setMaxFinalCompletionHand(Math.max(...finalCompletionHands))
+        } else {
+          setAvgFinalCompletionHand(null)
+          setMaxFinalCompletionHand(null)
+        }
       }
       setError(null)
     } catch (err) {
@@ -108,6 +135,8 @@ export function SimulatePanel() {
       setResult(null)
       setAvgPeak(null)
       setMaxPeak(null)
+      setAvgFinalCompletionHand(null)
+      setMaxFinalCompletionHand(null)
     }
   }
 
@@ -228,6 +257,12 @@ export function SimulatePanel() {
             <>
               <div>Avg peak sequence number: {avgPeak.toFixed(1)}</div>
               <div>Highest peak seen: {Number(maxPeak.toFixed(2))}</div>
+            </>
+          )}
+          {avgFinalCompletionHand !== null && maxFinalCompletionHand !== null && (
+            <>
+              <div>Avg final sequence completed at hand: {avgFinalCompletionHand.toFixed(1)}</div>
+              <div>Latest final sequence completed at hand: {maxFinalCompletionHand}</div>
             </>
           )}
         </div>
