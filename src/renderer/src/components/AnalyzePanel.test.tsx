@@ -135,6 +135,27 @@ describe('AnalyzePanel', () => {
     expect(screen.queryByTestId('analyze-results')).not.toBeInTheDocument()
   })
 
+  it('shows the hand number where the final sequence completed', () => {
+    const history: HandHistoryEntry[] = [entry('player'), entry('banker'), entry('banker')]
+    render(<AnalyzePanel history={history} />)
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '3,4' } })
+    fireEvent.click(screen.getByText('Start Analysis'))
+
+    // Spot defaults to 'banker'. Hand 0 (player): banker bet loses, [3,4] extends to [3,4,7].
+    // Hand 1 (banker): wins, [3,4,7] reduces to [4] (not yet empty — length>2 slices both ends).
+    // Hand 2 (banker): wins, [4] collapses to [] — completes at 0-based index 2 → hand 3.
+    expect(screen.getByText('Final sequence completed at hand 3')).toBeInTheDocument()
+  })
+
+  it('does not show a final completion hand when the sequence never completes', () => {
+    const history: HandHistoryEntry[] = [entry('player')]
+    render(<AnalyzePanel history={history} />)
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '3,4' } })
+    fireEvent.click(screen.getByText('Start Analysis'))
+
+    expect(screen.queryByText(/Final sequence completed at hand/)).not.toBeInTheDocument()
+  })
+
   it('shows the highest sequence number reached and marks the peak hand on the board', () => {
     const history: HandHistoryEntry[] = [entry('player')]
     const { container } = render(<AnalyzePanel history={history} />)

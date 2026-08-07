@@ -158,6 +158,9 @@ export function AnalyzePanel({ history }: AnalyzePanelProps) {
         <div className="analyze-panel__results" data-testid="analyze-results">
           <div>Sequence completed {completions.length} times</div>
           <div>{skipped.filter((i) => history[i].outcome !== 'tie').length} hands skipped</div>
+          {completions.length > 0 && (
+            <div>Final sequence completed at hand {completions[completions.length - 1] + 1}</div>
+          )}
           <div>Highest sequence number: {Number(peakNumber.toFixed(2))}</div>
           <BigRoad
             history={history}
