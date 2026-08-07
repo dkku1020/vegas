@@ -33,3 +33,27 @@
   gap: 6px;
   font-size: 0.9rem;
 }
+
+.simulate-panel__compare-results {
+  font-size: 0.9rem;
+}
+
+.simulate-panel__compare-results table {
+  border-collapse: collapse;
+}
+
+.simulate-panel__compare-results td,
+.simulate-panel__compare-results th {
+  padding: 4px 10px;
+  text-align: right;
+}
+
+.simulate-panel__compare-results td:first-child,
+.simulate-panel__compare-results th:first-child {
+  text-align: left;
+}
+
+.simulate-panel__compare-results thead th {
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}

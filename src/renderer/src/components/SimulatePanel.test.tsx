@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react'
 import { SimulatePanel } from './SimulatePanel'
 
 describe('SimulatePanel', () => {
@@ -218,7 +218,7 @@ describe('SimulatePanel', () => {
     expect(screen.getByText('Compare Spots')).toBeInTheDocument()
   })
 
-  it('runs Compare Spots and shows a results table with all four spots', () => {
+  it('runs Compare Spots and shows a results table with all four spots', async () => {
     render(<SimulatePanel />)
     fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
     fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '1,2' } })
@@ -226,6 +226,9 @@ describe('SimulatePanel', () => {
     fireEvent.change(screen.getByLabelText('Trials'), { target: { value: '5' } })
     fireEvent.click(screen.getByText('Compare Spots'))
 
+    await waitFor(() =>
+      expect(screen.getByTestId('simulate-compare-results')).toBeInTheDocument()
+    )
     const table = screen.getByTestId('simulate-compare-results')
     expect(table).toBeInTheDocument()
     // Verify all four spot columns are in the table header
@@ -242,7 +245,7 @@ describe('SimulatePanel', () => {
     expect(cells.map((c) => c.textContent)).toEqual(['5', '5', '5', '5'])
   })
 
-  it('does not clear the single-run results when Compare Spots is run, or vice versa', () => {
+  it('does not clear the single-run results when Compare Spots is run, or vice versa', async () => {
     render(<SimulatePanel />)
     fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
     fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '1,2' } })
@@ -253,17 +256,33 @@ describe('SimulatePanel', () => {
     expect(screen.getByTestId('simulate-results')).toBeInTheDocument()
 
     fireEvent.click(screen.getByText('Compare Spots'))
+    await waitFor(() =>
+      expect(screen.getByTestId('simulate-compare-results')).toBeInTheDocument()
+    )
     expect(screen.getByTestId('simulate-results')).toBeInTheDocument()
     expect(screen.getByTestId('simulate-compare-results')).toBeInTheDocument()
   })
 
-  it('shows an error when Compare Spots inputs are invalid', () => {
+  it('shows an error when Compare Spots inputs are invalid', async () => {
     render(<SimulatePanel />)
     fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
     fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: 'abc' } })
     fireEvent.click(screen.getByText('Compare Spots'))
 
-    expect(screen.getByTestId('simulate-error')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByTestId('simulate-error')).toBeInTheDocument())
     expect(screen.queryByTestId('simulate-compare-results')).not.toBeInTheDocument()
+  })
+
+  it('disables the Compare Spots button and shows "Running…" while comparing', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '1,2' } })
+    fireEvent.change(screen.getByLabelText('Unit'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('Trials'), { target: { value: '5' } })
+    fireEvent.click(screen.getByText('Compare Spots'))
+
+    const button = screen.getByText('Running…')
+    expect(button).toBeInTheDocument()
+    expect(button).toBeDisabled()
   })
 })

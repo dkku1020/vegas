@@ -64,7 +64,8 @@ function runLabouchereSimulation(
   parsedNoNewSequenceAfter: number | undefined,
   startingBankroll: number,
   shoesPerSession: number,
-  trials: number
+  trials: number,
+  seed?: number
 ): LabouchereRunResult {
   const strategy = labouchere(
     spot,
@@ -80,6 +81,7 @@ function runLabouchereSimulation(
     startingBankroll,
     shoesPerSession,
     trials,
+    seed,
     onSessionComplete: (sessionHistory) => {
       peaks.push(computePeakSequenceNumber(parsedSequence, parsedUnit, sessionHistory))
       const lastCompletionIndex = computeLastCompletionIndex(
@@ -127,6 +129,7 @@ export function SimulatePanel() {
     LabouchereRunResult
   > | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isComparing, setIsComparing] = useState(false)
 
   function handleRun(): void {
     try {
@@ -174,63 +177,73 @@ export function SimulatePanel() {
   }
 
   function handleCompareSpots(): void {
-    try {
-      const parsedSequence = parseSequence(sequence)
-      const parsedUnit = Number(unit)
-      const parsedSkipAfter = parseSkipAfter(skipAfter)
-      const parsedNoNewSequenceAfter = parseNoNewSequenceAfter(noNewSequenceAfter)
-      const parsedStartingBankroll = Number(startingBankroll)
-      const parsedShoesPerSession = Number(shoesPerSession)
-      const parsedTrials = Number(trials)
+    setIsComparing(true)
+    setTimeout(() => {
+      try {
+        const parsedSequence = parseSequence(sequence)
+        const parsedUnit = Number(unit)
+        const parsedSkipAfter = parseSkipAfter(skipAfter)
+        const parsedNoNewSequenceAfter = parseNoNewSequenceAfter(noNewSequenceAfter)
+        const parsedStartingBankroll = Number(startingBankroll)
+        const parsedShoesPerSession = Number(shoesPerSession)
+        const parsedTrials = Number(trials)
+        const seed = Math.floor(Math.random() * 2 ** 31)
 
-      const next: Record<LabouchereSpot, LabouchereRunResult> = {
-        player: runLabouchereSimulation(
-          'player',
-          parsedSequence,
-          parsedUnit,
-          parsedSkipAfter,
-          parsedNoNewSequenceAfter,
-          parsedStartingBankroll,
-          parsedShoesPerSession,
-          parsedTrials
-        ),
-        banker: runLabouchereSimulation(
-          'banker',
-          parsedSequence,
-          parsedUnit,
-          parsedSkipAfter,
-          parsedNoNewSequenceAfter,
-          parsedStartingBankroll,
-          parsedShoesPerSession,
-          parsedTrials
-        ),
-        follow: runLabouchereSimulation(
-          'follow',
-          parsedSequence,
-          parsedUnit,
-          parsedSkipAfter,
-          parsedNoNewSequenceAfter,
-          parsedStartingBankroll,
-          parsedShoesPerSession,
-          parsedTrials
-        ),
-        counter: runLabouchereSimulation(
-          'counter',
-          parsedSequence,
-          parsedUnit,
-          parsedSkipAfter,
-          parsedNoNewSequenceAfter,
-          parsedStartingBankroll,
-          parsedShoesPerSession,
-          parsedTrials
-        )
+        const next: Record<LabouchereSpot, LabouchereRunResult> = {
+          player: runLabouchereSimulation(
+            'player',
+            parsedSequence,
+            parsedUnit,
+            parsedSkipAfter,
+            parsedNoNewSequenceAfter,
+            parsedStartingBankroll,
+            parsedShoesPerSession,
+            parsedTrials,
+            seed
+          ),
+          banker: runLabouchereSimulation(
+            'banker',
+            parsedSequence,
+            parsedUnit,
+            parsedSkipAfter,
+            parsedNoNewSequenceAfter,
+            parsedStartingBankroll,
+            parsedShoesPerSession,
+            parsedTrials,
+            seed
+          ),
+          follow: runLabouchereSimulation(
+            'follow',
+            parsedSequence,
+            parsedUnit,
+            parsedSkipAfter,
+            parsedNoNewSequenceAfter,
+            parsedStartingBankroll,
+            parsedShoesPerSession,
+            parsedTrials,
+            seed
+          ),
+          counter: runLabouchereSimulation(
+            'counter',
+            parsedSequence,
+            parsedUnit,
+            parsedSkipAfter,
+            parsedNoNewSequenceAfter,
+            parsedStartingBankroll,
+            parsedShoesPerSession,
+            parsedTrials,
+            seed
+          )
+        }
+        setCompareResults(next)
+        setError(null)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Simulation failed.')
+        setCompareResults(null)
+      } finally {
+        setIsComparing(false)
       }
-      setCompareResults(next)
-      setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Simulation failed.')
-      setCompareResults(null)
-    }
+    }, 0)
   }
 
   return (
@@ -304,9 +317,6 @@ export function SimulatePanel() {
               Unit
               <input type="number" value={unit} onChange={(e) => setUnit(e.target.value)} />
             </label>
-            <button type="button" onClick={handleCompareSpots}>
-              Compare Spots
-            </button>
           </>
         )}
         <label>
@@ -332,6 +342,11 @@ export function SimulatePanel() {
         <button type="button" onClick={handleRun}>
           Run
         </button>
+        {strategyType === 'labouchere' && (
+          <button type="button" onClick={handleCompareSpots} disabled={isComparing}>
+            {isComparing ? 'Running…' : 'Compare Spots'}
+          </button>
+        )}
       </div>
       {error && (
         <div className="simulate-panel__error" data-testid="simulate-error">
@@ -361,7 +376,7 @@ export function SimulatePanel() {
           )}
         </div>
       )}
-      {compareResults && (
+      {strategyType === 'labouchere' && compareResults && (
         <div className="simulate-panel__compare-results" data-testid="simulate-compare-results">
           <table>
             <thead>
