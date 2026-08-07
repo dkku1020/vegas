@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { flatBet, labouchere, computePeakSequenceNumber, type StrategyContext } from './strategy'
+import { flatBet, labouchere, computePeakSequenceNumber, computeLastCompletionIndex, type StrategyContext } from './strategy'
 import type { SimHandRecord } from './strategy'
 import { TABLE_MAX_BET } from '../state/gameReducer'
 
@@ -598,5 +598,42 @@ describe('computePeakSequenceNumber', () => {
       { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'banker', netChange: 0 }
     ]
     expect(computePeakSequenceNumber([1, 2, 3, 4], 5, history)).toBe(5)
+  })
+})
+
+describe('computeLastCompletionIndex', () => {
+  it('returns null when the sequence never completes', () => {
+    const history: SimHandRecord[] = [
+      { bets: { player: 25, banker: 0, tie: 0 }, outcome: 'banker', netChange: -25 }
+    ]
+    expect(computeLastCompletionIndex([1, 2, 3, 4], 5, history)).toBeNull()
+  })
+
+  it('returns the index of a single completion', () => {
+    const history: SimHandRecord[] = [
+      { bets: { player: 35, banker: 0, tie: 0 }, outcome: 'player', netChange: 33.25 }
+    ]
+    expect(computeLastCompletionIndex([3, 4], 5, history)).toBe(0)
+  })
+
+  it('returns the last index when the sequence completes and restarts multiple times', () => {
+    const history: SimHandRecord[] = [
+      { bets: { player: 10, banker: 0, tie: 0 }, outcome: 'player', netChange: 9.5 },
+      { bets: { player: 10, banker: 0, tie: 0 }, outcome: 'player', netChange: 9.5 }
+    ]
+    // [1,1] completes on hand 0 (single win, length<=2 rule), resets to a fresh [1,1] for
+    // hand 1 (mid-loop reset in deriveLabouchereSequence), which also wins and completes.
+    expect(computeLastCompletionIndex([1, 1], 5, history)).toBe(1)
+  })
+
+  it('ignores a zero-wager sit-out hand that follows a completion', () => {
+    const history: SimHandRecord[] = [
+      { bets: { player: 35, banker: 0, tie: 0 }, outcome: 'player', netChange: 33.25 },
+      { bets: { player: 0, banker: 0, tie: 0 }, outcome: 'banker', netChange: 0 }
+    ]
+    // Hand 0 completes [3,4]. Hand 1 is a zero-wager sit-out (e.g. from skipAfter or
+    // noNewSequenceAfter) — the derived sequence is still empty at hand 1, but that's not a
+    // NEW completion, so the answer must stay 0, not advance to 1.
+    expect(computeLastCompletionIndex([3, 4], 5, history)).toBe(0)
   })
 })

@@ -168,3 +168,23 @@ export function computePeakSequenceNumber(
   }
   return peak
 }
+
+export function computeLastCompletionIndex(
+  initialSequence: number[],
+  unit: number,
+  history: SimHandRecord[]
+): number | null {
+  let lastCompletionIndex: number | null = null
+  const seen: SimHandRecord[] = []
+  for (let i = 0; i < history.length; i++) {
+    const record = history[i]
+    seen.push(record)
+    const wager = record.bets.player + record.bets.banker
+    if (wager <= 0) continue
+    const remaining = deriveLabouchereSequence(initialSequence, unit, seen)
+    if (remaining.length === 0) {
+      lastCompletionIndex = i
+    }
+  }
+  return lastCompletionIndex
+}
