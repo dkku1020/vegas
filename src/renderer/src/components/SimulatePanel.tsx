@@ -10,14 +10,19 @@ import { runSimulation, type SimulationResult } from '../engine/simulate'
 import './SimulatePanel.css'
 
 const SPOTS: BetSpot[] = ['player', 'banker', 'tie']
-const LABOUCHERE_SPOTS: Array<'player' | 'banker' | 'follow' | 'counter'> = [
-  'player',
-  'banker',
-  'follow',
-  'counter'
-]
+const LABOUCHERE_SPOTS: LabouchereSpot[] = ['player', 'banker', 'follow', 'counter']
 
 type StrategyType = 'flat' | 'labouchere'
+
+type LabouchereSpot = 'player' | 'banker' | 'follow' | 'counter'
+
+interface LabouchereRunResult {
+  result: SimulationResult
+  avgPeak: number
+  maxPeak: number
+  avgFinalCompletionHand: number | null
+  maxFinalCompletionHand: number | null
+}
 
 function parseSequence(text: string): number[] {
   const parts = text
@@ -51,13 +56,60 @@ function parseNoNewSequenceAfter(text: string): number | undefined {
   return value
 }
 
+function runLabouchereSimulation(
+  spot: LabouchereSpot,
+  parsedSequence: number[],
+  parsedUnit: number,
+  parsedSkipAfter: number | undefined,
+  parsedNoNewSequenceAfter: number | undefined,
+  startingBankroll: number,
+  shoesPerSession: number,
+  trials: number
+): LabouchereRunResult {
+  const strategy = labouchere(
+    spot,
+    parsedSequence,
+    parsedUnit,
+    parsedSkipAfter,
+    parsedNoNewSequenceAfter
+  )
+  const peaks: number[] = []
+  const finalCompletionHands: number[] = []
+  const result = runSimulation({
+    strategy,
+    startingBankroll,
+    shoesPerSession,
+    trials,
+    onSessionComplete: (sessionHistory) => {
+      peaks.push(computePeakSequenceNumber(parsedSequence, parsedUnit, sessionHistory))
+      const lastCompletionIndex = computeLastCompletionIndex(
+        parsedSequence,
+        parsedUnit,
+        sessionHistory
+      )
+      if (lastCompletionIndex !== null) {
+        finalCompletionHands.push(lastCompletionIndex + 1)
+      }
+    }
+  })
+  return {
+    result,
+    avgPeak: peaks.reduce((a, b) => a + b, 0) / peaks.length,
+    maxPeak: Math.max(...peaks),
+    avgFinalCompletionHand:
+      finalCompletionHands.length > 0
+        ? finalCompletionHands.reduce((a, b) => a + b, 0) / finalCompletionHands.length
+        : null,
+    maxFinalCompletionHand:
+      finalCompletionHands.length > 0 ? Math.max(...finalCompletionHands) : null
+  }
+}
+
 export function SimulatePanel() {
   const [strategyType, setStrategyType] = useState<StrategyType>('flat')
   const [spot, setSpot] = useState<BetSpot>('banker')
   const [amount, setAmount] = useState('10')
-  const [labouchereSpot, setLabouchereSpot] = useState<'player' | 'banker' | 'follow' | 'counter'>(
-    'banker'
-  )
+  const [labouchereSpot, setLabouchereSpot] = useState<LabouchereSpot>('banker')
   const [sequence, setSequence] = useState('1,1,1,1')
   const [unit, setUnit] = useState('5')
   const [skipAfter, setSkipAfter] = useState('')
@@ -90,44 +142,21 @@ export function SimulatePanel() {
       } else {
         const parsedSequence = parseSequence(sequence)
         const parsedUnit = Number(unit)
-        const strategy = labouchere(
+        const runResult = runLabouchereSimulation(
           labouchereSpot,
           parsedSequence,
           parsedUnit,
           parseSkipAfter(skipAfter),
-          parseNoNewSequenceAfter(noNewSequenceAfter)
+          parseNoNewSequenceAfter(noNewSequenceAfter),
+          Number(startingBankroll),
+          Number(shoesPerSession),
+          Number(trials)
         )
-        const peaks: number[] = []
-        const finalCompletionHands: number[] = []
-        const next = runSimulation({
-          strategy,
-          startingBankroll: Number(startingBankroll),
-          shoesPerSession: Number(shoesPerSession),
-          trials: Number(trials),
-          onSessionComplete: (sessionHistory) => {
-            peaks.push(computePeakSequenceNumber(parsedSequence, parsedUnit, sessionHistory))
-            const lastCompletionIndex = computeLastCompletionIndex(
-              parsedSequence,
-              parsedUnit,
-              sessionHistory
-            )
-            if (lastCompletionIndex !== null) {
-              finalCompletionHands.push(lastCompletionIndex + 1)
-            }
-          }
-        })
-        setResult(next)
-        setAvgPeak(peaks.reduce((a, b) => a + b, 0) / peaks.length)
-        setMaxPeak(Math.max(...peaks))
-        if (finalCompletionHands.length > 0) {
-          setAvgFinalCompletionHand(
-            finalCompletionHands.reduce((a, b) => a + b, 0) / finalCompletionHands.length
-          )
-          setMaxFinalCompletionHand(Math.max(...finalCompletionHands))
-        } else {
-          setAvgFinalCompletionHand(null)
-          setMaxFinalCompletionHand(null)
-        }
+        setResult(runResult.result)
+        setAvgPeak(runResult.avgPeak)
+        setMaxPeak(runResult.maxPeak)
+        setAvgFinalCompletionHand(runResult.avgFinalCompletionHand)
+        setMaxFinalCompletionHand(runResult.maxFinalCompletionHand)
       }
       setError(null)
     } catch (err) {
@@ -176,9 +205,7 @@ export function SimulatePanel() {
               Spot
               <select
                 value={labouchereSpot}
-                onChange={(e) =>
-                  setLabouchereSpot(e.target.value as 'player' | 'banker' | 'follow' | 'counter')
-                }
+                onChange={(e) => setLabouchereSpot(e.target.value as LabouchereSpot)}
               >
                 {LABOUCHERE_SPOTS.map((s) => (
                   <option key={s} value={s}>
