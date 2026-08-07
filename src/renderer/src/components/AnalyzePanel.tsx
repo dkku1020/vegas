@@ -49,7 +49,7 @@ function parseNoNewSequenceAfter(text: string): number | undefined {
 
 export function AnalyzePanel({ history }: AnalyzePanelProps) {
   const [spot, setSpot] = useState<'player' | 'banker' | 'follow' | 'counter'>('banker')
-  const [sequence, setSequence] = useState('1,2,3,4')
+  const [sequence, setSequence] = useState('1,1,1,1')
   const [unit, setUnit] = useState('5')
   const [skipAfter, setSkipAfter] = useState('')
   const [noNewSequenceAfter, setNoNewSequenceAfter] = useState('')
