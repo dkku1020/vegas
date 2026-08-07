@@ -122,6 +122,10 @@ export function SimulatePanel() {
   const [maxPeak, setMaxPeak] = useState<number | null>(null)
   const [avgFinalCompletionHand, setAvgFinalCompletionHand] = useState<number | null>(null)
   const [maxFinalCompletionHand, setMaxFinalCompletionHand] = useState<number | null>(null)
+  const [compareResults, setCompareResults] = useState<Record<
+    LabouchereSpot,
+    LabouchereRunResult
+  > | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   function handleRun(): void {
@@ -166,6 +170,66 @@ export function SimulatePanel() {
       setMaxPeak(null)
       setAvgFinalCompletionHand(null)
       setMaxFinalCompletionHand(null)
+    }
+  }
+
+  function handleCompareSpots(): void {
+    try {
+      const parsedSequence = parseSequence(sequence)
+      const parsedUnit = Number(unit)
+      const parsedSkipAfter = parseSkipAfter(skipAfter)
+      const parsedNoNewSequenceAfter = parseNoNewSequenceAfter(noNewSequenceAfter)
+      const parsedStartingBankroll = Number(startingBankroll)
+      const parsedShoesPerSession = Number(shoesPerSession)
+      const parsedTrials = Number(trials)
+
+      const next: Record<LabouchereSpot, LabouchereRunResult> = {
+        player: runLabouchereSimulation(
+          'player',
+          parsedSequence,
+          parsedUnit,
+          parsedSkipAfter,
+          parsedNoNewSequenceAfter,
+          parsedStartingBankroll,
+          parsedShoesPerSession,
+          parsedTrials
+        ),
+        banker: runLabouchereSimulation(
+          'banker',
+          parsedSequence,
+          parsedUnit,
+          parsedSkipAfter,
+          parsedNoNewSequenceAfter,
+          parsedStartingBankroll,
+          parsedShoesPerSession,
+          parsedTrials
+        ),
+        follow: runLabouchereSimulation(
+          'follow',
+          parsedSequence,
+          parsedUnit,
+          parsedSkipAfter,
+          parsedNoNewSequenceAfter,
+          parsedStartingBankroll,
+          parsedShoesPerSession,
+          parsedTrials
+        ),
+        counter: runLabouchereSimulation(
+          'counter',
+          parsedSequence,
+          parsedUnit,
+          parsedSkipAfter,
+          parsedNoNewSequenceAfter,
+          parsedStartingBankroll,
+          parsedShoesPerSession,
+          parsedTrials
+        )
+      }
+      setCompareResults(next)
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Simulation failed.')
+      setCompareResults(null)
     }
   }
 
@@ -240,6 +304,9 @@ export function SimulatePanel() {
               Unit
               <input type="number" value={unit} onChange={(e) => setUnit(e.target.value)} />
             </label>
+            <button type="button" onClick={handleCompareSpots}>
+              Compare Spots
+            </button>
           </>
         )}
         <label>
@@ -292,6 +359,94 @@ export function SimulatePanel() {
               <div>Latest final sequence completed at hand: {maxFinalCompletionHand}</div>
             </>
           )}
+        </div>
+      )}
+      {compareResults && (
+        <div className="simulate-panel__compare-results" data-testid="simulate-compare-results">
+          <table>
+            <thead>
+              <tr>
+                <th>Stat</th>
+                {LABOUCHERE_SPOTS.map((s) => (
+                  <th key={s}>{s}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-testid="compare-row-trials">
+                <td>Trials</td>
+                {LABOUCHERE_SPOTS.map((s) => (
+                  <td key={s}>{compareResults[s].result.summary.trialCount}</td>
+                ))}
+              </tr>
+              <tr data-testid="compare-row-avg-net-profit">
+                <td>Avg net profit</td>
+                {LABOUCHERE_SPOTS.map((s) => (
+                  <td key={s}>${compareResults[s].result.summary.avgNetProfit.toFixed(2)}</td>
+                ))}
+              </tr>
+              <tr data-testid="compare-row-median-net-profit">
+                <td>Median net profit</td>
+                {LABOUCHERE_SPOTS.map((s) => (
+                  <td key={s}>${compareResults[s].result.summary.medianNetProfit.toFixed(2)}</td>
+                ))}
+              </tr>
+              <tr data-testid="compare-row-bust-rate">
+                <td>Bust rate</td>
+                {LABOUCHERE_SPOTS.map((s) => (
+                  <td key={s}>
+                    {(compareResults[s].result.summary.bustRate * 100).toFixed(0)}%
+                  </td>
+                ))}
+              </tr>
+              <tr data-testid="compare-row-best-trial">
+                <td>Best trial</td>
+                {LABOUCHERE_SPOTS.map((s) => (
+                  <td key={s}>${compareResults[s].result.summary.bestNetProfit.toFixed(2)}</td>
+                ))}
+              </tr>
+              <tr data-testid="compare-row-worst-trial">
+                <td>Worst trial</td>
+                {LABOUCHERE_SPOTS.map((s) => (
+                  <td key={s}>${compareResults[s].result.summary.worstNetProfit.toFixed(2)}</td>
+                ))}
+              </tr>
+              <tr data-testid="compare-row-avg-hands-played">
+                <td>Avg hands played</td>
+                {LABOUCHERE_SPOTS.map((s) => (
+                  <td key={s}>{compareResults[s].result.summary.avgHandsPlayed.toFixed(1)}</td>
+                ))}
+              </tr>
+              <tr data-testid="compare-row-avg-peak">
+                <td>Avg peak sequence number</td>
+                {LABOUCHERE_SPOTS.map((s) => (
+                  <td key={s}>{compareResults[s].avgPeak.toFixed(1)}</td>
+                ))}
+              </tr>
+              <tr data-testid="compare-row-max-peak">
+                <td>Highest peak seen</td>
+                {LABOUCHERE_SPOTS.map((s) => (
+                  <td key={s}>{Number(compareResults[s].maxPeak.toFixed(2))}</td>
+                ))}
+              </tr>
+              <tr data-testid="compare-row-avg-final-completion">
+                <td>Avg final sequence completed at hand</td>
+                {LABOUCHERE_SPOTS.map((s) => (
+                  <td key={s}>
+                    {compareResults[s].avgFinalCompletionHand !== null
+                      ? compareResults[s].avgFinalCompletionHand!.toFixed(1)
+                      : '—'}
+                  </td>
+                ))}
+              </tr>
+              <tr data-testid="compare-row-max-final-completion">
+                <td>Latest final sequence completed at hand</td>
+                {LABOUCHERE_SPOTS.map((s) => (
+                  <td key={s}>{compareResults[s].maxFinalCompletionHand ?? '—'}</td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
         </div>
       )}
     </div>

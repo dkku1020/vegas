@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import { SimulatePanel } from './SimulatePanel'
 
 describe('SimulatePanel', () => {
@@ -205,5 +205,65 @@ describe('SimulatePanel', () => {
 
     expect(screen.getByTestId('simulate-error')).toBeInTheDocument()
     expect(screen.queryByTestId('simulate-results')).not.toBeInTheDocument()
+  })
+
+  it('hides the Compare Spots button for Flat Bet strategy', () => {
+    render(<SimulatePanel />)
+    expect(screen.queryByText('Compare Spots')).not.toBeInTheDocument()
+  })
+
+  it('shows the Compare Spots button for Labouchere strategy', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    expect(screen.getByText('Compare Spots')).toBeInTheDocument()
+  })
+
+  it('runs Compare Spots and shows a results table with all four spots', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '1,2' } })
+    fireEvent.change(screen.getByLabelText('Unit'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('Trials'), { target: { value: '5' } })
+    fireEvent.click(screen.getByText('Compare Spots'))
+
+    const table = screen.getByTestId('simulate-compare-results')
+    expect(table).toBeInTheDocument()
+    // Verify all four spot columns are in the table header
+    expect(within(table).getByText('player')).toBeInTheDocument()
+    expect(within(table).getByText('banker')).toBeInTheDocument()
+    expect(within(table).getByText('follow')).toBeInTheDocument()
+    expect(within(table).getByText('counter')).toBeInTheDocument()
+
+    // Trial count is deterministic (always equals the requested trial count, regardless of
+    // RNG), so this is a reliable assertion unlike the profit/peak numbers.
+    const trialsRow = table.querySelector('[data-testid="compare-row-trials"]')
+    expect(trialsRow).not.toBeNull()
+    const cells = Array.from(trialsRow!.querySelectorAll('td')).slice(1)
+    expect(cells.map((c) => c.textContent)).toEqual(['5', '5', '5', '5'])
+  })
+
+  it('does not clear the single-run results when Compare Spots is run, or vice versa', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: '1,2' } })
+    fireEvent.change(screen.getByLabelText('Unit'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('Trials'), { target: { value: '5' } })
+
+    fireEvent.click(screen.getByText('Run'))
+    expect(screen.getByTestId('simulate-results')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('Compare Spots'))
+    expect(screen.getByTestId('simulate-results')).toBeInTheDocument()
+    expect(screen.getByTestId('simulate-compare-results')).toBeInTheDocument()
+  })
+
+  it('shows an error when Compare Spots inputs are invalid', () => {
+    render(<SimulatePanel />)
+    fireEvent.change(screen.getByLabelText('Strategy'), { target: { value: 'labouchere' } })
+    fireEvent.change(screen.getByLabelText('Sequence'), { target: { value: 'abc' } })
+    fireEvent.click(screen.getByText('Compare Spots'))
+
+    expect(screen.getByTestId('simulate-error')).toBeInTheDocument()
+    expect(screen.queryByTestId('simulate-compare-results')).not.toBeInTheDocument()
   })
 })
